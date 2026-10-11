@@ -13,6 +13,7 @@ export default function Practice() {
   const [typedText, setTypedText] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const startTimeRef = useRef<number | null>(null);
+  const focusAfterRestartRef = useRef(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [previouslyIncorrectPositions, setPreviouslyIncorrectPositions] =
     useState<Set<number>>(() => new Set());
@@ -52,6 +53,21 @@ export default function Practice() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (focusAfterRestartRef.current) {
+      inputRef.current?.focus();
+      focusAfterRestartRef.current = false;
+    }
+  }, [typedText]);
+
+  function handleRestart() {
+    focusAfterRestartRef.current = true;
+    setTypedText("");
+    setElapsedSeconds(0);
+    setPreviouslyIncorrectPositions(new Set());
+    startTimeRef.current = null;
+  }
 
   function handleTextChange(value: string) {
     if (isFinished) {
@@ -138,6 +154,13 @@ export default function Practice() {
           <p>Mistakes: {mistakeCount}</p>
           <p>Corrected: {correctedCharacterCount}</p>
           <p>Characters per second: {charactersPerSecond.toFixed(2)}</p>
+          <button
+            type="button"
+            onClick={handleRestart}
+            className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
+          >
+            Restart
+          </button>
         </section>
       )}
     </main>
