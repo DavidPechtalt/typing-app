@@ -1,7 +1,9 @@
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
+  NavLink,
   Outlet,
   Scripts,
   ScrollRestoration,
@@ -19,7 +21,7 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;500&display=swap",
   },
 ];
 
@@ -42,7 +44,42 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <div className="flex min-h-screen flex-col">
+      <header className="border-b border-slate-200 bg-white/80 dark:border-slate-800 dark:bg-slate-900/80">
+        <nav
+          aria-label="Main"
+          className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4"
+        >
+          <Link
+            to="/"
+            className="flex items-center gap-2 font-semibold tracking-tight"
+          >
+            <span
+              aria-hidden="true"
+              className="rounded-md bg-blue-600 px-1.5 py-0.5 font-mono text-sm text-white"
+            >
+              Aa
+            </span>
+            Typing App
+          </Link>
+          <NavLink
+            to="/practice"
+            className={({ isActive }) =>
+              `rounded-md px-3 py-1.5 text-sm font-medium ${
+                isActive
+                  ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              }`
+            }
+          >
+            Practice
+          </NavLink>
+        </nav>
+      </header>
+      <Outlet />
+    </div>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

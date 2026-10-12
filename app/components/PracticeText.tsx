@@ -25,7 +25,7 @@ export function PracticeText({
               key={index}
               className={`${getColorClass(status)} ${getHighlightClass(status, isIncorrectSpace, isCurrentCharacter)}`}
             >
-              {character === " " ? "\u00A0" : character}
+              {character}
             </span>
           );
         })}
@@ -36,14 +36,14 @@ export function PracticeText({
 
 function getColorClass(status: CharacterStatus): string {
   if (status === "incorrect") {
-    return "text-red-600";
+    return "text-red-600 underline decoration-2 underline-offset-4 dark:text-red-400";
   }
 
   if (status === "correct" || status === "corrected") {
-    return "text-green-600";
+    return "text-slate-900 dark:text-slate-100";
   }
 
-  return "text-gray-900 dark:text-gray-100";
+  return "text-slate-500 dark:text-slate-400";
 }
 
 function getHighlightClass(
@@ -52,15 +52,15 @@ function getHighlightClass(
   isCurrentCharacter: boolean,
 ): string {
   if (status === "corrected") {
-    return "rounded-sm bg-yellow-200 dark:bg-yellow-800/60";
+    return "rounded-sm bg-amber-100 dark:bg-amber-500/20";
   }
 
   if (isIncorrectSpace) {
-    return "rounded-sm bg-red-200 dark:bg-red-900/70";
+    return "rounded-sm bg-red-100 dark:bg-red-500/20";
   }
 
   if (isCurrentCharacter) {
-    return "rounded-sm bg-sky-200 dark:bg-sky-800/70";
+    return "rounded-sm bg-blue-100 shadow-[inset_2px_0_0_var(--color-blue-600)] dark:bg-blue-500/20";
   }
 
   return "";
