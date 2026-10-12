@@ -1,5 +1,15 @@
 export type CharacterStatus = "pending" | "correct" | "corrected" | "incorrect";
 
+export type PracticeSummary = Record<
+
+  | "wordsPerMinute"
+  | "charactersPerSecond"
+  | "accuracy"
+  | "mistakeCount"
+  | "correctedCharacterCount",
+  number
+>;
+
 export function compareText(
   targetText: string,
   typedText: string,
@@ -54,4 +64,43 @@ export function calculateAccuracy(
   }
 
   return (correctCharacterCount / totalCharacterCount) * 100;
+}
+
+export function summarizeResult(
+  characterStatuses: CharacterStatus[],
+  elapsedSeconds: number,
+): PracticeSummary {
+  const targetCharacterCount = characterStatuses.length;
+  const correctCharacterCount = characterStatuses.filter(
+    (status) => status === "correct" || status === "corrected",
+  ).length;
+  const firstTryCorrectCharacterCount = characterStatuses.filter(
+    (status) => status === "correct",
+  ).length;
+  const correctedCharacterCount = characterStatuses.filter(
+    (status) => status === "corrected",
+  ).length;
+  const mistakeCount = characterStatuses.filter(
+    (status) => status === "incorrect",
+  ).length;
+  const wordsPerMinute = calculateWordsPerMinute(
+    correctCharacterCount,
+    elapsedSeconds,
+  );
+  const charactersPerSecond = calculateCharactersPerSecond(
+    correctCharacterCount,
+    elapsedSeconds,
+  );
+  const accuracy = calculateAccuracy(
+    firstTryCorrectCharacterCount,
+    targetCharacterCount,
+  );
+
+  return {
+    correctedCharacterCount,
+    mistakeCount,
+    wordsPerMinute,
+    charactersPerSecond,
+    accuracy,
+  };
 }
