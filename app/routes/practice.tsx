@@ -4,15 +4,36 @@ import {
   recordIncorrectPositions,
   summarizeResult,
 } from "../lib/typing";
+import type { Route } from "./+types/practice";
 
-const practiceText =
-  "A quiet morning is a good time to practice a new skill. Sit comfortably, relax your hands.";
+export function loader() {
+  return {
+    practiceText:
+      "A quiet morning is a good time to practice a new skill. Sit comfortably, relax your hands.",
+  };
+}
 
-export default function Practice() {
+export default function Practice({ loaderData }: Route.ComponentProps) {
+  const [attempt, setAttempt] = useState(0);
+
+  return (
+    <PracticeSession
+      key={attempt}
+      practiceText={loaderData.practiceText}
+      onRestart={() => setAttempt(attempt + 1)}
+    />
+  );
+}
+
+type PracticeSessionProps = {
+  practiceText: string;
+  onRestart: () => void;
+};
+
+function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
   const [typedText, setTypedText] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const startTimeRef = useRef<number | null>(null);
-  const focusAfterRestartRef = useRef(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [previouslyIncorrectPositions, setPreviouslyIncorrectPositions] =
     useState<Set<number>>(() => new Set());
@@ -36,25 +57,14 @@ export default function Practice() {
     inputRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    if (focusAfterRestartRef.current) {
-      inputRef.current?.focus();
-      focusAfterRestartRef.current = false;
-    }
-  }, [typedText]);
-
-  function handleRestart() {
-    focusAfterRestartRef.current = true;
-    setTypedText("");
-    setElapsedSeconds(0);
-    setPreviouslyIncorrectPositions(new Set());
-    startTimeRef.current = null;
-  }
-
-  function handleTextChange(value: string) {
+  function handleTextChange(inputValue: string) {
     if (isFinished) {
       return;
     }
+
+    const value = Array.from(inputValue)
+      .slice(0, targetCharacterCount)
+      .join("");
 
     if (value.length > 0 && startTimeRef.current === null) {
       startTimeRef.current = performance.now();
@@ -120,6 +130,17 @@ export default function Practice() {
         aria-label="Type the practice passage"
         value={typedText}
         onChange={(event) => handleTextChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+          }
+        }}
+        onPaste={(event) => event.preventDefault()}
+        onDrop={(event) => event.preventDefault()}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
         disabled={isFinished}
         className="sr-only"
       />
@@ -135,7 +156,7 @@ export default function Practice() {
           <p>Characters per second: {charactersPerSecond.toFixed(2)}</p>
           <button
             type="button"
-            onClick={handleRestart}
+            onClick={onRestart}
             className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
           >
             Restart
