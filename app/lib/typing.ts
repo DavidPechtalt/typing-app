@@ -1,13 +1,14 @@
 export type CharacterStatus = "pending" | "correct" | "corrected" | "incorrect";
 
-export type PracticeSummary = Record<
-
-  | "wordsPerMinute"
-  | "charactersPerSecond"
-  | "accuracy"
-  | "mistakeCount"
-  | "correctedCharacterCount",
-  number
+export type PracticeSummary = Readonly<
+  Record<
+    | "wordsPerMinute"
+    | "charactersPerSecond"
+    | "accuracy"
+    | "mistakeCount"
+    | "correctedCharacterCount",
+    number
+  >
 >;
 
 export function compareText(
@@ -67,7 +68,7 @@ export function calculateAccuracy(
 }
 
 export function summarizeResult(
-  characterStatuses: CharacterStatus[],
+  characterStatuses: readonly CharacterStatus[],
   elapsedSeconds: number,
 ): PracticeSummary {
   const targetCharacterCount = characterStatuses.length;
