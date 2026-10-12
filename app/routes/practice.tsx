@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   compareText,
   recordIncorrectPositions,
@@ -52,10 +52,6 @@ function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
   const targetCharacterCount = Array.from(practiceText).length;
   const typedCharacterCount = Array.from(typedText).length;
   const isFinished = typedCharacterCount >= targetCharacterCount;
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   function handleTextChange(inputValue: string) {
     if (isFinished) {
@@ -126,6 +122,7 @@ function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
       </h1>
       <textarea
         ref={inputRef}
+        autoFocus
         id="typing-input"
         aria-label="Type the practice passage"
         value={typedText}
