@@ -105,3 +105,16 @@ export function summarizeResult(
     accuracy,
   };
 }
+
+export function recordIncorrectPositions(
+  characterStatuses:readonly CharacterStatus[],
+  previouslyIncorrectPositions: ReadonlySet<number>,
+): Set<number> {
+  const nextIncorrectPositions = new Set(previouslyIncorrectPositions);
+  characterStatuses.forEach((status, index) => {
+    if (status === "incorrect") {
+      nextIncorrectPositions.add(index);
+    }
+  });
+  return nextIncorrectPositions;
+}

@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { compareText, summarizeResult } from "../lib/typing";
+import {
+  compareText,
+  recordIncorrectPositions,
+  summarizeResult,
+} from "../lib/typing";
 
 const practiceText =
   "A quiet morning is a good time to practice a new skill. Sit comfortably, relax your hands.";
@@ -61,13 +65,10 @@ export default function Practice() {
       value,
       previouslyIncorrectPositions,
     );
-    const nextIncorrectPositions = new Set(previouslyIncorrectPositions);
-
-    nextStatuses.forEach((status, index) => {
-      if (status === "incorrect") {
-        nextIncorrectPositions.add(index);
-      }
-    });
+    const nextIncorrectPositions = recordIncorrectPositions(
+      nextStatuses,
+      previouslyIncorrectPositions,
+    );
 
     if (
       Array.from(value).length >= targetCharacterCount &&
