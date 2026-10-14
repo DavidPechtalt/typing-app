@@ -7,6 +7,7 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    seed: "node --env-file=.env prisma/seed.ts",
   },
   datasource: {
     // Migrations use the direct (unpooled) connection, as Neon recommends.

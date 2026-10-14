@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:check": "node --env-file=.env scripts/db-check.ts"
+    "db:check": "node --env-file=.env scripts/db-check.ts",
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
     "@neon/config": "^1.9.5",
