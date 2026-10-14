@@ -5,17 +5,27 @@ import {
   summarizeResult,
 } from "~/lib/typing";
 import { PracticeText } from "~/components/PracticeText";
+import { db } from "~/db.server";
 import type { Route } from "./+types/practice";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Practice | Typing App" },
 ];
 
-export function loader() {
-  return {
-    practiceText:
-      "A quiet morning is a good time to practice a new skill. Sit comfortably, relax your hands.",
-  };
+export async function loader() {
+  // Built-in texts have no owner. Take the first one by id until text selection exists.
+  const text = await db.text.findFirst({
+    where: { ownerId: null },
+    orderBy: { id: "asc" },
+  });
+
+  if (!text) {
+    throw new Response("No practice texts yet. Run `npm run db:seed`.", {
+      status: 404,
+    });
+  }
+
+  return { practiceText: text.content };
 }
 
 export default function Practice({ loaderData }: Route.ComponentProps) {
