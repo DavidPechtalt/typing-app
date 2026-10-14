@@ -4,8 +4,8 @@
 // The connection URL lives in prisma.config.ts, not here (Prisma 7).
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider            = "prisma-client"
+  output              = "../generated/prisma"
   // Write ".ts" on imports inside the generated files so plain Node (scripts/db-check.ts)
   // can run them as well as Vite.
   importFileExtension = "ts"
@@ -16,3 +16,42 @@ datasource db {
 }
 
 // Models (User, Text, Result) go below.
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  texts   Text[]
+  results Result[]
+}
+
+model Text {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  language  String   @default("en")
+  ownerId   Int?
+  createdAt DateTime @default(now())
+
+  owner   User?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  results Result[]
+}
+
+model Result {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  textId      Int
+  wpm         Float
+  accuracy    Float
+  mistakes    Int
+  corrections Int
+  durationMs  Int
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text Text @relation(fields: [textId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
