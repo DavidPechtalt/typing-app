@@ -1,0 +1,18 @@
+// Prisma schema: the single description of the database tables.
+// `npx prisma migrate dev` turns changes here into SQL migrations and
+// regenerates the typed client in generated/prisma.
+// The connection URL lives in prisma.config.ts, not here (Prisma 7).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  // Write ".ts" on imports inside the generated files so plain Node (scripts/db-check.ts)
+  // can run them as well as Vite.
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Models (User, Text, Result) go below.
