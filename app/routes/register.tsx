@@ -1,8 +1,16 @@
-import { data, Form, Link, redirect, useNavigation } from "react-router";
+import {
+  data,
+  Form,
+  Link,
+  redirect,
+  useNavigation,
+  useSearchParams,
+} from "react-router";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { db } from "~/db.server";
 import { createUserSession, getUserId } from "~/session.server";
+import { safeRedirect } from "~/lib/redirect";
 import type { Route } from "./+types/register";
 
 export const meta: Route.MetaFunction = () => [
@@ -16,9 +24,13 @@ const registerSchema = z.object({
 
 const BCRYPT_ROUNDS = 10;
 
+function getRedirectTo(request: Request): string {
+  return safeRedirect(new URL(request.url).searchParams.get("redirectTo"));
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
   const userId = await getUserId(request);
-  if (userId !== null) throw redirect("/practice");
+  if (userId !== null) throw redirect(getRedirectTo(request));
   return null;
 }
 
@@ -61,12 +73,16 @@ export async function action({ request }: Route.ActionArgs) {
     select: { id: true },
   });
 
-  return createUserSession(user.id, "/practice");
+  return createUserSession(user.id, getRedirectTo(request));
 }
 
 export default function Register({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const [searchParams] = useSearchParams();
+  const loginHref = searchParams.has("redirectTo")
+    ? `/login?${searchParams}`
+    : "/login";
   const errors = actionData?.errors;
 
   return (
@@ -154,7 +170,7 @@ export default function Register({ actionData }: Route.ComponentProps) {
       <p className="text-center text-sm text-slate-600 dark:text-slate-400">
         Already have an account?{" "}
         <Link
-          to="/login"
+          to={loginHref}
           className="font-medium text-blue-600 hover:underline dark:text-blue-400"
         >
           Log in
