@@ -1,12 +1,15 @@
 # Notes
 
-## 2026-10-18: Session setup
+## 2026-10-18: Session, register and login
 
 What I built:
 
 - `app/session.server.ts`: the login state. After login the user's id goes into a signed cookie; every request that needs the user reads it back. Public functions: `getUserId`, `getUser`, `requireUserId`, `createUserSession`, `logout`.
 - `SESSION_SECRET` in `.env`, generated with `openssl rand -hex 32`. The server refuses to start without it, same as with `DATABASE_URL`.
 - `.env.example` and a README section listing the three env variables, so someone else can run the app.
+- `/register`: Zod schema (trimmed email, password of at least 8), check that the email is free, hash with bcrypt (10 rounds), create the user, then `createUserSession`. Errors come back per field with status 400 through `data()`.
+- `/login`: same form, but `bcrypt.compare` against the stored hash. Unknown email and wrong password give the same "Wrong email or password".
+- `app/lib/redirect.ts`: `safeRedirect` and `DEFAULT_REDIRECT`. Both pages read `?redirectTo=` from the URL and send the user back there after success, with unit tests.
 
 Things I learned:
 
@@ -16,6 +19,13 @@ Things I learned:
 - **Throwing a redirect.** `requireUserId` does `throw redirect("/login?redirectTo=...")`. React Router catches a thrown Response and sends it, so the loader stops right there. `redirectTo` lets login send the user back to the page they wanted.
 - **`select` in Prisma.** `getUser` asks only for `id` and `email`, so the password hash never leaves the database layer.
 - **No sessions table.** The whole session lives in the cookie. For a single user id that is enough; a table would only be needed for things like "log out everywhere".
+- **Hashing is a fingerprint, not a key.** Login hashes the typed password with the salt that is stored inside the hash string itself (`$2b$10$` + 22 chars of salt + 31 chars of hash) and compares. A stolen hash can't be typed into the form, because it would just get hashed again. The salt is not secret; it only makes every hash unique so one precomputed table can't attack the whole table.
+- **Why bcrypt is slow on purpose.** 10 rounds = about 100 ms per attempt. Nothing for one login, years for someone guessing millions of passwords against a stolen database.
+- **Open redirect.** `redirectTo` is put in the URL by `requireUserId`, but anyone can write a URL. `safeRedirect` accepts only paths that start with exactly one `/` (not `//host` or `/\host`), otherwise it falls back to `/practice`.
+- **No hidden input needed for `redirectTo`.** `<Form>` posts to the page's own URL including the query string, so the action sees the same parameter as the loader.
+- **Same error for both login failures.** If "no such email" and "wrong password" had different messages, the form would tell anyone which emails are registered.
+- **Login has no minimum password length.** The length rule is a registration rule. If I ever change it, old accounts must still log in, and every wrong guess should produce the same one message. (Not a security argument: the minimum is printed on the register page anyway.)
+- **TypeScript narrowing.** After `if (typeof to !== "string") return`, `to` is just `string`, so `startsWith` is available. Before that line it is still the whole union.
 
 ## 2026-10-14: Database
 
