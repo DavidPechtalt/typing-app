@@ -13,8 +13,23 @@ Built with React Router (framework mode, the successor to Remix), TypeScript and
 
 ```bash
 npm install
+cp .env.example .env   # then fill in the values, see below
+npx prisma migrate dev
+npm run db:seed
 npm run dev
 ```
+
+### Environment variables
+
+`.env` is ignored by git and must never be committed. `.env.example` lists the variables:
+
+| Variable                | What it is                                                                          |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| `DATABASE_URL`          | Pooled Postgres connection string (from the Neon dashboard), used by the app        |
+| `DATABASE_URL_UNPOOLED` | Direct connection string, used by Prisma migrations                                 |
+| `SESSION_SECRET`        | Random string that signs the login cookie. Generate one with `openssl rand -hex 32` |
+
+The app refuses to start if `DATABASE_URL` or `SESSION_SECRET` is missing.
 
 Open http://localhost:5173 and choose **Start practising**.
 

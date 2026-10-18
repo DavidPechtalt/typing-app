@@ -1,5 +1,22 @@
 # Notes
 
+## 2026-10-18: Session setup
+
+What I built:
+
+- `app/session.server.ts`: the login state. After login the user's id goes into a signed cookie; every request that needs the user reads it back. Public functions: `getUserId`, `getUser`, `requireUserId`, `createUserSession`, `logout`.
+- `SESSION_SECRET` in `.env`, generated with `openssl rand -hex 32`. The server refuses to start without it, same as with `DATABASE_URL`.
+- `.env.example` and a README section listing the three env variables, so someone else can run the app.
+
+Things I learned:
+
+- **A signed cookie is not an encrypted cookie.** The user id is readable in the browser, but changing it breaks the signature and the server returns an empty session. That is why the secret must stay in `.env`.
+- **`httpOnly` + `sameSite: "lax"`.** `httpOnly` hides the cookie from page JavaScript (XSS can't steal it). `sameSite` stops other sites from posting forms with my cookie attached (CSRF).
+- **`secure` only in production.** The dev server runs on plain http, so if `secure` were always on the browser would silently drop the cookie and nothing would stay logged in.
+- **Throwing a redirect.** `requireUserId` does `throw redirect("/login?redirectTo=...")`. React Router catches a thrown Response and sends it, so the loader stops right there. `redirectTo` lets login send the user back to the page they wanted.
+- **`select` in Prisma.** `getUser` asks only for `id` and `email`, so the password hash never leaves the database layer.
+- **No sessions table.** The whole session lives in the cookie. For a single user id that is enough; a table would only be needed for things like "log out everywhere".
+
 ## 2026-10-14: Database
 
 What I built:
