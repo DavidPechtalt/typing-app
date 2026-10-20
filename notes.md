@@ -1,5 +1,20 @@
 # Notes
 
+## 2026-10-20: Logout and the email bug
+
+What I built:
+
+- `/logout`: a route with no page. The action calls `logout()` from `session.server.ts`, which answers with a redirect to `/` and a `Set-Cookie` header that deletes `__session`. The loader (GET) only redirects home.
+- The header in `root.tsx` now knows the user. A root loader calls `getUser(request)` on every page and the nav shows "Log in / Register" or the email plus a "Log out" button.
+- Fixed a bug I found by accident: I registered twice with the same Gmail address, once with a capital letter. Both register and login now `.toLowerCase()` the email in the Zod schema. Deleted the duplicate account.
+
+Things I learned:
+
+- **The root loader runs for every page.** Every URL matches the root route, so it is the one place that can answer "who is logged in" without each page asking again. Pages that _require_ a user still call `requireUserId` themselves.
+- **Log out is a form, not a link.** Logging out changes server state. A GET link could be fired by an `<img src="/logout">` on any site; a POST form can only be submitted on purpose, and the cookie's `sameSite: "lax"` blocks cross-site POSTs. That is also why GET `/logout` only redirects.
+- **`@unique` is exact in Postgres.** `Davidpechtalt@` and `davidpechtalt@` are different strings, so the unique constraint and `findUnique` both saw two users. Normalising at the input boundary (Zod) is the usual fix; the alternative is Postgres's `citext` type, which needs an extension.
+- **`.trim().toLowerCase().pipe(z.email())`.** Zod transforms run in order, so the email is cleaned before validation, and the cleaned value is what the action receives.
+
 ## 2026-10-18: Session, register and login
 
 What I built:

@@ -18,7 +18,12 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 const loginSchema = z.object({
-  email: z.string().trim().pipe(z.email("Enter a valid email address")),
+  // Lowercased so one inbox can only have one account (Postgres compares exactly).
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .pipe(z.email("Enter a valid email address")),
   password: z.string().min(1, "Enter your password"),
 });
 

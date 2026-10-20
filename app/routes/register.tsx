@@ -18,7 +18,12 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 const registerSchema = z.object({
-  email: z.string().trim().pipe(z.email("Enter a valid email address")),
+  // Lowercased so one inbox can only have one account (Postgres compares exactly).
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .pipe(z.email("Enter a valid email address")),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
