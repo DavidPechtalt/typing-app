@@ -1,4 +1,5 @@
 import {
+  Form,
   isRouteErrorResponse,
   Link,
   Links,
@@ -7,7 +8,9 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "react-router";
+import { getUser } from "./session.server";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -24,6 +27,11 @@ export const links: Route.LinksFunction = () => [
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;500&display=swap",
   },
 ];
+
+// Runs on every page so the header knows who is logged in.
+export async function loader({ request }: Route.LoaderArgs) {
+  return { user: await getUser(request) };
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -43,7 +51,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function navLinkClass({ isActive }: { isActive: boolean }) {
+  return `rounded-md px-3 py-1.5 text-sm font-medium ${
+    isActive
+      ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+  }`;
+}
+
 export default function App() {
+  const { user } = useLoaderData<typeof loader>();
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-slate-200 bg-white/80 dark:border-slate-800 dark:bg-slate-900/80">
@@ -63,18 +80,36 @@ export default function App() {
             </span>
             Typing App
           </Link>
-          <NavLink
-            to="/practice"
-            className={({ isActive }) =>
-              `rounded-md px-3 py-1.5 text-sm font-medium ${
-                isActive
-                  ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-              }`
-            }
-          >
-            Practice
-          </NavLink>
+          <div className="flex items-center gap-1">
+            <NavLink to="/practice" className={navLinkClass}>
+              Practice
+            </NavLink>
+            {user ? (
+              <>
+                <span className="hidden px-3 text-sm text-slate-500 sm:inline dark:text-slate-400">
+                  {user.email}
+                </span>
+                {/* POST, not a link: logging out changes state. */}
+                <Form method="post" action="/logout">
+                  <button
+                    type="submit"
+                    className={navLinkClass({ isActive: false })}
+                  >
+                    Log out
+                  </button>
+                </Form>
+              </>
+            ) : (
+              <>
+                <NavLink to="/login" className={navLinkClass}>
+                  Log in
+                </NavLink>
+                <NavLink to="/register" className={navLinkClass}>
+                  Register
+                </NavLink>
+              </>
+            )}
+          </div>
         </nav>
       </header>
       <Outlet />
