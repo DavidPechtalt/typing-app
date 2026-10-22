@@ -1,5 +1,21 @@
 # Notes
 
+## 2026-10-22: Saving results
+
+What I built:
+
+- The practice page saves every finished attempt. A `useEffect` watches `isFinished`; when it flips to true it calls `fetcher.submit` with the stats, which POSTs to the route's own `action`. A `useRef` flag makes sure it submits once per attempt.
+- The action reads the user id from the session cookie (never from the form), validates the stats with Zod (`z.coerce.number()` because FormData only carries strings), checks the text still exists, then `db.result.create`. A guest gets 401 and the page shows a "Log in to save your results" link; bad input gets 400.
+- The loader now returns `textId` next to the text so the Result row can reference it.
+- Tested with curl: guest 401, bad number 400, missing text 400, logged in 200 and the row appeared in Neon.
+
+Things I learned:
+
+- **`fetcher.submit` vs `<Form>`.** A fetcher posts without navigating, so the results stay on screen and `fetcher.state` / `fetcher.data` drive the "Saving… / Saved" message.
+- **Dependency array = "re-run when one of these changes".** ESLint's `exhaustive-deps` lists every value the effect reads because it only sees what the code reads, not what it means. This effect is a one-time event, so the array is `[isFinished]` with a disable comment explaining why.
+- **`data()` wraps the action's return type.** `fetcher.data` typed through `useFetcher<typeof action>()` and `Route.ComponentProps["actionData"]` unwraps it; `Awaited<ReturnType<typeof action>>` does not.
+- **Check the foreign key yourself.** Posting a `textId` that does not exist crashed with `Result_textId_fkey`. A `findUnique` first turns that into a clean 400.
+
 ## 2026-10-20: Logout and the email bug
 
 What I built:

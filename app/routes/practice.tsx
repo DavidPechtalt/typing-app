@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   compareText,
   recordIncorrectPositions,
@@ -7,6 +7,9 @@ import {
 import { PracticeText } from "~/components/PracticeText";
 import { db } from "~/db.server";
 import type { Route } from "./+types/practice";
+import { data, Link, useFetcher } from "react-router";
+import { z } from "zod";
+import { getUserId } from "~/session.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Practice | Typing App" },
@@ -25,7 +28,47 @@ export async function loader() {
     });
   }
 
-  return { practiceText: text.content };
+  return { practiceText: text.content, textId: text.id };
+}
+
+const saveResultSchema = z.object({
+  textId: z.coerce.number().int().positive(),
+  wpm: z.coerce.number().min(0),
+  accuracy: z.coerce.number().min(0).max(100),
+  mistakes: z.coerce.number().int().min(0),
+  corrections: z.coerce.number().int().min(0),
+  durationMs: z.coerce.number().int().positive(),
+});
+
+export async function action({ request }: Route.ActionArgs) {
+  const userId = await getUserId(request);
+  if (userId === null) {
+    return data(
+      { saved: false, reason: "not-logged-in" as const },
+      { status: 401 },
+    );
+  }
+
+  const formData = await request.formData();
+  const parsed = saveResultSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return data({ saved: false, reason: "invalid" as const }, { status: 400 });
+  }
+
+  const textExists = await db.text.findUnique({
+    where: { id: parsed.data.textId },
+    select: { id: true },
+  });
+  if (!textExists) {
+    return data({ saved: false, reason: "invalid" as const }, { status: 400 });
+  }
+
+  // userId comes from the session, never from the form.
+  await db.result.create({
+    data: { userId, ...parsed.data },
+  });
+
+  return { saved: true as const, reason: null };
 }
 
 export default function Practice({ loaderData }: Route.ComponentProps) {
@@ -35,6 +78,7 @@ export default function Practice({ loaderData }: Route.ComponentProps) {
     <PracticeSession
       key={attempt}
       practiceText={loaderData.practiceText}
+      textId={loaderData.textId}
       onRestart={() => setAttempt(attempt + 1)}
     />
   );
@@ -42,10 +86,16 @@ export default function Practice({ loaderData }: Route.ComponentProps) {
 
 type PracticeSessionProps = {
   practiceText: string;
+  textId: number;
   onRestart: () => void;
 };
 
-function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
+function PracticeSession({
+  practiceText,
+  textId,
+  onRestart,
+}: PracticeSessionProps) {
+  const fetcher = useFetcher<typeof action>();
   const [typedText, setTypedText] = useState("");
   const startTimeRef = useRef<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -66,6 +116,27 @@ function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
   const targetCharacterCount = Array.from(practiceText).length;
   const typedCharacterCount = Array.from(typedText).length;
   const isFinished = typedCharacterCount >= targetCharacterCount;
+
+  const hasSubmittedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isFinished || hasSubmittedRef.current) return;
+    hasSubmittedRef.current = true;
+
+    fetcher.submit(
+      {
+        textId: String(textId),
+        wpm: String(wordsPerMinute),
+        accuracy: String(accuracy),
+        mistakes: String(mistakeCount),
+        corrections: String(correctedCharacterCount),
+        durationMs: String(Math.round(elapsedSeconds * 1000)),
+      },
+      { method: "post" },
+    );
+    // Runs once when the text is completed; the stats are final at that point.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFinished]);
 
   function handleTextChange(inputValue: string) {
     if (isFinished) {
@@ -103,6 +174,11 @@ function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
     setTypedText(value);
   }
 
+  useEffect(() => {
+    if (!isFinished) return;
+
+    fetcher.submit({ textId: String(practiceText) });
+  });
   const progressPercent = (typedCharacterCount / targetCharacterCount) * 100;
 
   return (
@@ -205,6 +281,7 @@ function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
                 value={charactersPerSecond.toFixed(2)}
               />
             </dl>
+            <SaveStatus state={fetcher.state} data={fetcher.data} />
             <button
               type="button"
               autoFocus
@@ -218,6 +295,36 @@ function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
       </section>
     </main>
   );
+}
+
+type SaveStatusProps = {
+  state: ReturnType<typeof useFetcher>["state"];
+  data: Route.ComponentProps["actionData"];
+};
+
+function SaveStatus({ state, data }: SaveStatusProps) {
+  const className = "text-center text-sm text-slate-600 dark:text-slate-400";
+
+  if (state !== "idle" || data === undefined) {
+    return <p className={className}>Saving your result…</p>;
+  }
+
+  if (data.saved) {
+    return <p className={className}>Result saved to your history.</p>;
+  }
+
+  if (data.reason === "not-logged-in") {
+    return (
+      <p className={className}>
+        <Link to="/login?redirectTo=/practice" className="underline">
+          Log in
+        </Link>{" "}
+        to save your results.
+      </p>
+    );
+  }
+
+  return <p className={className}>Could not save this result.</p>;
 }
 
 type StatProps = {
