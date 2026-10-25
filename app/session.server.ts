@@ -53,7 +53,7 @@ export async function requireAdmin(request: Request) {
   if (user.role !== "ADMIN") {
     throw new Response("Forbidden", { status: 403 });
   }
-  return user;
+  return { ...user, role: user.role };
 }
 
 export async function requireUserId(request: Request): Promise<number> {
