@@ -23,6 +23,7 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
 
+  role Role @default(USER)
   texts   Text[]
   results Result[]
 }
@@ -54,4 +55,9 @@ model Result {
   text Text @relation(fields: [textId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+enum Role {
+  USER
+  ADMIN
 }

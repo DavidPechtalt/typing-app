@@ -1,5 +1,18 @@
 # Notes
 
+## 2026-10-25: User roles (start of the admin section)
+
+What I built:
+
+- A `Role` enum (`USER`, `ADMIN`) in the schema and a `role` field on `User` with `@default(USER)`. Migration `20261025115737_add_user_role` creates the Postgres type and adds the column; the default fills `USER` into every existing row, which is why adding a `NOT NULL` column to a table that already has rows works.
+- Made my own account admin with SQL instead of through the app, so there is no way to register as admin: `npx prisma db execute --stdin <<< "UPDATE \"User\" SET role = 'ADMIN' WHERE email = '...';"`
+
+Things I learned:
+
+- **Prisma 7: `migrate dev` no longer runs `generate`.** The database got the `role` column but the TypeScript client in `generated/prisma` did not know it, and a query selecting `role` failed with "Unknown field `role`". After every schema change: `npx prisma migrate dev`, then `npx prisma generate`, then restart the dev server.
+- **Quoted table names.** Prisma creates the table as `"User"` with a capital U. Postgres lowercases names that are not in double quotes, so `UPDATE User` would look for a table called `user`.
+- **The enum protects the data.** `'admin'` (lowercase) is rejected by Postgres; only the exact enum values are allowed.
+
 ## 2026-10-22: Saving results
 
 What I built:
