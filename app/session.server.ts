@@ -35,16 +35,31 @@ export async function getUser(request: Request) {
   if (userId === null) return null;
   return db.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true },
+    select: { id: true, email: true, role: true },
   });
+}
+
+function loginPathWithRedirect(request: Request) {
+  const url = new URL(request.url);
+  const searchParams = new URLSearchParams({ redirectTo: url.pathname });
+  return `/login?${searchParams}`;
+}
+
+export async function requireAdmin(request: Request) {
+  const user = await getUser(request);
+  if (user === null) {
+    throw redirect(loginPathWithRedirect(request));
+  }
+  if (user.role !== "ADMIN") {
+    throw new Response("Forbidden", { status: 403 });
+  }
+  return user;
 }
 
 export async function requireUserId(request: Request): Promise<number> {
   const userId = await getUserId(request);
   if (userId !== null) return userId;
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams({ redirectTo: url.pathname });
-  throw redirect(`/login?${searchParams}`);
+  throw redirect(loginPathWithRedirect(request));
 }
 
 export async function createUserSession(userId: number, redirectTo: string) {
