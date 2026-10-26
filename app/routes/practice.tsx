@@ -1,10 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  calculateAccuracy,
-  calculateCharactersPerSecond,
-  calculateWordsPerMinute,
-  compareText,
-} from "../lib/typing";
+import { compareText, summarizeResult } from "../lib/typing";
 
 const practiceText =
   "A quiet morning is a good time to practice a new skill. Sit comfortably, relax your hands.";
@@ -17,38 +12,23 @@ export default function Practice() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [previouslyIncorrectPositions, setPreviouslyIncorrectPositions] =
     useState<Set<number>>(() => new Set());
-  const targetCharacterCount = Array.from(practiceText).length;
-  const isFinished = Array.from(typedText).length >= targetCharacterCount;
   const characterStatuses = compareText(
     practiceText,
     typedText,
     previouslyIncorrectPositions,
   );
+  const {
+    correctedCharacterCount,
+    mistakeCount,
+    wordsPerMinute,
+    charactersPerSecond,
+    accuracy,
+  } = summarizeResult(characterStatuses, elapsedSeconds);
+  const targetCharacterCount = Array.from(typedText).length;
+
+  const isFinished = Array.from(typedText).length >= targetCharacterCount;
+
   const typedCharacterCount = Array.from(typedText).length;
-  const correctCharacterCount = characterStatuses.filter(
-    (status) => status === "correct" || status === "corrected",
-  ).length;
-  const firstTryCorrectCharacterCount = characterStatuses.filter(
-    (status) => status === "correct",
-  ).length;
-  const correctedCharacterCount = characterStatuses.filter(
-    (status) => status === "corrected",
-  ).length;
-  const mistakeCount = characterStatuses.filter(
-    (status) => status === "incorrect",
-  ).length;
-  const wordsPerMinute = calculateWordsPerMinute(
-    correctCharacterCount,
-    elapsedSeconds,
-  );
-  const charactersPerSecond = calculateCharactersPerSecond(
-    correctCharacterCount,
-    elapsedSeconds,
-  );
-  const accuracy = calculateAccuracy(
-    firstTryCorrectCharacterCount,
-    targetCharacterCount,
-  );
 
   useEffect(() => {
     inputRef.current?.focus();
