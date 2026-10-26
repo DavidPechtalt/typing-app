@@ -4,7 +4,7 @@ import {
   calculateCharactersPerSecond,
   calculateWordsPerMinute,
   compareText,
-} from "../logic/typing";
+} from "../lib/typing";
 
 const practiceText =
   "A quiet morning is a good time to practice a new skill. Sit comfortably, relax your hands.";
