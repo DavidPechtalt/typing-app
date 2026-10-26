@@ -1,52 +1,142 @@
 import { useRef, useState } from "react";
-import { data } from "react-router";
-import { prisma } from "~/db.server";
+import { data, Link, useFetcher } from "react-router";
+import { z } from "zod";
+import { scorePractice } from "~/lib/score";
 import {
   compareText,
   recordIncorrectPositions,
   summarizeResult,
 } from "~/lib/typing";
+import { savePracticeSchema } from "~/lib/validation";
 import { PracticeText } from "~/components/PracticeText";
+import { createResult } from "~/models/result.server";
+import { getFirstBuiltInText, getTextForUser } from "~/models/text.server";
+import { getUserId } from "~/session.server";
 import type { Route } from "./+types/practice";
 
-export const meta: Route.MetaFunction = () => [
-  { title: "Practice | Typing App" },
+export const meta: Route.MetaFunction = ({ loaderData }) => [
+  { title: `${loaderData?.text.title ?? "Practice"} | Typing App` },
 ];
 
-export async function loader() {
-  const text = await prisma.text.findFirst({
-    where: { ownerId: null },
-    orderBy: { id: "asc" },
-  });
+const textIdSchema = z.coerce.number().int().positive();
 
-  if (!text) {
-    throw data("No practice text found. Run: npx prisma db seed", {
-      status: 404,
-    });
+// /practice opens the first built-in text; /practice/5 opens text 5.
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const userId = await getUserId(request);
+  let text;
+
+  if (params.textId === undefined) {
+    text = await getFirstBuiltInText();
+  } else {
+    const textId = textIdSchema.safeParse(params.textId);
+    text = textId.success ? await getTextForUser(textId.data, userId) : null;
   }
 
-  return { practiceText: text.content };
+  if (!text) {
+    throw data("Text not found.", { status: 404 });
+  }
+
+  return { text, isLoggedIn: userId !== null };
+}
+
+type SaveResponse = { saved: boolean; error: string | null };
+
+// Saves a finished practice. The browser sends what was typed, and the server
+// calculates the result itself with the same functions the page uses.
+export async function action({ request }: Route.ActionArgs) {
+  const userId = await getUserId(request);
+
+  if (userId === null) {
+    return data<SaveResponse>(
+      { saved: false, error: "Log in to save your results." },
+      { status: 401 },
+    );
+  }
+
+  const formData = await request.formData();
+  const parsed = savePracticeSchema.safeParse(Object.fromEntries(formData));
+
+  if (!parsed.success) {
+    return data<SaveResponse>(
+      { saved: false, error: "The result could not be read." },
+      { status: 400 },
+    );
+  }
+
+  const { textId, typedText, incorrectPositions, durationMs } = parsed.data;
+  const text = await getTextForUser(textId, userId);
+
+  if (!text) {
+    return data<SaveResponse>(
+      { saved: false, error: "Text not found." },
+      { status: 404 },
+    );
+  }
+
+  const score = scorePractice(
+    text.content,
+    typedText,
+    incorrectPositions,
+    durationMs,
+  );
+
+  if (!score.ok) {
+    return data<SaveResponse>(
+      { saved: false, error: score.reason },
+      { status: 400 },
+    );
+  }
+
+  await createResult({
+    userId,
+    textId,
+    wpm: score.summary.wordsPerMinute,
+    accuracy: score.summary.accuracy,
+    mistakes: score.summary.mistakeCount,
+    corrections: score.summary.correctedCharacterCount,
+    durationMs,
+  });
+
+  return data<SaveResponse>({ saved: true, error: null });
 }
 
 export default function Practice({ loaderData }: Route.ComponentProps) {
+  const { text, isLoggedIn } = loaderData;
   const [attempt, setAttempt] = useState(0);
 
   return (
     <PracticeSession
-      key={attempt}
-      practiceText={loaderData.practiceText}
+      // A new text or a restart starts a fresh session.
+      key={`${text.id}-${attempt}`}
+      textId={text.id}
+      isLoggedIn={isLoggedIn}
+      title={text.title}
+      practiceText={text.content}
+      language={text.language}
       onRestart={() => setAttempt(attempt + 1)}
     />
   );
 }
 
 type PracticeSessionProps = {
+  textId: number;
+  isLoggedIn: boolean;
+  title: string;
   practiceText: string;
+  language: "en" | "he";
   onRestart: () => void;
 };
 
-function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
+function PracticeSession({
+  textId,
+  isLoggedIn,
+  title,
+  practiceText,
+  language,
+  onRestart,
+}: PracticeSessionProps) {
   const [typedText, setTypedText] = useState("");
+  const saveFetcher = useFetcher<SaveResponse>();
   const startTimeRef = useRef<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [previouslyIncorrectPositions, setPreviouslyIncorrectPositions] =
@@ -96,7 +186,21 @@ function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
       typedCharacters.length >= targetCharacterCount &&
       startTimeRef.current !== null
     ) {
-      setElapsedSeconds((performance.now() - startTimeRef.current) / 1000);
+      const durationMs = Math.round(performance.now() - startTimeRef.current);
+      setElapsedSeconds(durationMs / 1000);
+
+      if (isLoggedIn) {
+        // useFetcher posts to this route's action without leaving the page.
+        saveFetcher.submit(
+          {
+            textId,
+            typedText: value,
+            incorrectPositions: [...nextIncorrectPositions].join(","),
+            durationMs,
+          },
+          { method: "post" },
+        );
+      }
     }
 
     setPreviouslyIncorrectPositions(nextIncorrectPositions);
@@ -107,8 +211,18 @@ function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-10">
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Practice</h1>
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        <div>
+          <Link
+            to="/texts"
+            className="text-sm font-medium text-blue-700 underline-offset-4 hover:underline dark:text-blue-400"
+          >
+            ← Choose another text
+          </Link>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            {title}
+          </h1>
+        </div>
         <p className="font-mono text-sm text-slate-500 tabular-nums dark:text-slate-400">
           {typedCharacterCount} / {targetCharacterCount}
         </p>
@@ -124,7 +238,11 @@ function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
         />
       </div>
 
-      <div className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10 dark:border-slate-800 dark:bg-slate-900">
+      <div
+        lang={language}
+        dir={language === "he" ? "rtl" : "ltr"}
+        className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10 dark:border-slate-800 dark:bg-slate-900"
+      >
         <textarea
           autoFocus
           id="typing-input"
@@ -147,7 +265,7 @@ function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
         />
         <label
           htmlFor="typing-input"
-          className="block cursor-text font-mono text-xl leading-loose whitespace-pre-wrap blur-sm transition peer-focus:blur-none peer-disabled:blur-none sm:text-2xl"
+          className={`block cursor-text ${language === "he" ? "font-sans" : "font-mono"} text-xl leading-loose whitespace-pre-wrap blur-sm transition peer-focus:blur-none peer-disabled:blur-none sm:text-2xl`}
         >
           <PracticeText
             text={practiceText}
@@ -213,10 +331,68 @@ function PracticeSession({ practiceText, onRestart }: PracticeSessionProps) {
             >
               Restart
             </button>
+            <SaveStatus
+              isLoggedIn={isLoggedIn}
+              loginPath={`/login?redirectTo=${encodeURIComponent(`/practice/${textId}`)}`}
+              state={saveFetcher.state}
+              response={saveFetcher.data}
+            />
           </div>
         )}
       </section>
     </main>
+  );
+}
+
+type SaveStatusProps = {
+  isLoggedIn: boolean;
+  loginPath: string;
+  state: "idle" | "loading" | "submitting";
+  response: SaveResponse | undefined;
+};
+
+function SaveStatus({
+  isLoggedIn,
+  loginPath,
+  state,
+  response,
+}: SaveStatusProps) {
+  const linkClassName =
+    "font-medium text-blue-700 underline-offset-4 hover:underline dark:text-blue-400";
+  let message;
+
+  if (!isLoggedIn) {
+    message = (
+      <>
+        <Link to={loginPath} className={linkClassName}>
+          Log in
+        </Link>{" "}
+        to save your results and see your progress.
+      </>
+    );
+  } else if (state !== "idle") {
+    message = "Saving your result…";
+  } else if (response?.saved) {
+    message = (
+      <>
+        Result saved.{" "}
+        <Link to="/history" className={linkClassName}>
+          See your history
+        </Link>
+      </>
+    );
+  } else if (response?.error) {
+    message = (
+      <span className="text-red-600 dark:text-red-400">
+        Not saved: {response.error}
+      </span>
+    );
+  }
+
+  return (
+    <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+      {message}
+    </p>
   );
 }
 

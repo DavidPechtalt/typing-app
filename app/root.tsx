@@ -54,6 +54,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function navLinkClassName({ isActive }: { isActive: boolean }) {
+  return `rounded-md px-3 py-1.5 text-sm font-medium ${
+    isActive
+      ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+  }`;
+}
+
 export default function App({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;
 
@@ -62,7 +70,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
       <header className="border-b border-slate-200 bg-white/80 dark:border-slate-800 dark:bg-slate-900/80">
         <nav
           aria-label="Main"
-          className="mx-auto flex h-14 max-w-4xl items-center gap-4 px-4"
+          className="mx-auto flex h-14 max-w-4xl items-center gap-2 px-4 sm:gap-4"
         >
           <Link
             to="/"
@@ -76,18 +84,17 @@ export default function App({ loaderData }: Route.ComponentProps) {
             </span>
             Typing App
           </Link>
-          <NavLink
-            to="/practice"
-            className={({ isActive }) =>
-              `rounded-md px-3 py-1.5 text-sm font-medium ${
-                isActive
-                  ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-              }`
-            }
-          >
+          <NavLink to="/practice" className={navLinkClassName}>
             Practice
           </NavLink>
+          <NavLink to="/texts" className={navLinkClassName}>
+            Texts
+          </NavLink>
+          {user && (
+            <NavLink to="/history" className={navLinkClassName}>
+              History
+            </NavLink>
+          )}
           <div className="ml-auto flex items-center gap-3">
             {user ? (
               <>

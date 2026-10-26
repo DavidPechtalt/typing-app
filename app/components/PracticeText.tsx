@@ -60,7 +60,7 @@ function getHighlightClass(
   }
 
   if (isCurrentCharacter) {
-    return "rounded-sm bg-blue-100 shadow-[inset_2px_0_0_var(--color-blue-600)] dark:bg-blue-500/20";
+    return "rounded-sm bg-blue-100 shadow-[inset_2px_0_0_var(--color-blue-600)] dark:bg-blue-500/20 rtl:shadow-[inset_-2px_0_0_var(--color-blue-600)]";
   }
 
   return "";
