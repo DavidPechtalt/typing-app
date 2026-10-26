@@ -82,7 +82,7 @@ export function summarizeResult(
     (status) => status === "corrected",
   ).length;
   const mistakeCount = characterStatuses.filter(
-    (status) => status === "incorrect",
+    (status) => status === "incorrect" || status == "corrected",
   ).length;
   const wordsPerMinute = calculateWordsPerMinute(
     correctCharacterCount,
