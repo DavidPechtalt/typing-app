@@ -13,7 +13,7 @@ Built with React Router (framework mode, the successor to Remix), TypeScript and
 ## Getting started
 
 ```bash
-cp .env.example .env     # database URL; change it if you use Neon
+cp .env.example .env     # then set SESSION_SECRET (openssl rand -hex 32)
 docker compose up -d     # start PostgreSQL locally
 npm install              # also generates the Prisma client
 npm run db:migrate       # create the tables
@@ -39,6 +39,14 @@ Open http://localhost:5173 and choose **Start practising**.
 | `npm run db:seed`      | Add the built-in practice texts           |
 | `npm run db:studio`    | Browse the database in the browser        |
 
+## Google sign-in (optional)
+
+1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), create an **OAuth client ID** of type **Web application**.
+2. Add `http://localhost:5173/auth/google/callback` as an **Authorized redirect URI** (for production, `<APP_URL>/auth/google/callback`).
+3. Put the client ID and secret in `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, and restart the dev server.
+
+The "Continue with Google" button only appears when both values are set.
+
 ## Project structure
 
 ```
@@ -47,7 +55,10 @@ app/
   components/   reusable UI pieces
   lib/          pure logic with no React (character comparison, statistics) and its tests
   generated/    Prisma client, generated from the schema (not committed)
+  models/       database functions per table (e.g. user.server.ts)
   db.server.ts  the single Prisma client (server only)
+  session.server.ts  the login cookie: create, read, destroy
+  google.server.ts   Google sign-in (OAuth 2.0)
   env.server.ts checks environment variables when the server starts
   root.tsx      the HTML layout and the top-level error page
   routes.ts     maps URLs to route files

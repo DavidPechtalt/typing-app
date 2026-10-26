@@ -18,7 +18,10 @@ enum Language {
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
-  passwordHash String
+  // null for users who only sign in with Google
+  passwordHash String?
+  // Google's id for the user ("sub"), set when they sign in with Google
+  googleId     String?  @unique
   createdAt    DateTime @default(now())
 
   texts   Text[]

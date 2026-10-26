@@ -1,4 +1,5 @@
 import {
+  Form,
   isRouteErrorResponse,
   Link,
   Links,
@@ -9,8 +10,18 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import { getUserById } from "~/models/user.server";
+import { getUserId } from "~/session.server";
 import type { Route } from "./+types/root";
 import "./app.css";
+
+// Runs for every page, so the header knows who is logged in.
+export async function loader({ request }: Route.LoaderArgs) {
+  const userId = await getUserId(request);
+  const user = userId === null ? null : await getUserById(userId);
+
+  return { user };
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -43,13 +54,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+export default function App({ loaderData }: Route.ComponentProps) {
+  const { user } = loaderData;
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-slate-200 bg-white/80 dark:border-slate-800 dark:bg-slate-900/80">
         <nav
           aria-label="Main"
-          className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4"
+          className="mx-auto flex h-14 max-w-4xl items-center gap-4 px-4"
         >
           <Link
             to="/"
@@ -75,6 +88,38 @@ export default function App() {
           >
             Practice
           </NavLink>
+          <div className="ml-auto flex items-center gap-3">
+            {user ? (
+              <>
+                <span className="hidden max-w-48 truncate text-sm text-slate-600 sm:inline dark:text-slate-400">
+                  {user.email}
+                </span>
+                <Form method="post" action="/logout">
+                  <button
+                    type="submit"
+                    className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                  >
+                    Log out
+                  </button>
+                </Form>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/register"
+                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
+          </div>
         </nav>
       </header>
       <Outlet />
