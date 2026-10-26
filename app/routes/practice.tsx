@@ -1,4 +1,6 @@
 import { useRef, useState } from "react";
+import { data } from "react-router";
+import { prisma } from "~/db.server";
 import {
   compareText,
   recordIncorrectPositions,
@@ -11,11 +13,19 @@ export const meta: Route.MetaFunction = () => [
   { title: "Practice | Typing App" },
 ];
 
-export function loader() {
-  return {
-    practiceText:
-      "A quiet morning is a good time to practice a new skill. Sit comfortably, relax your hands.",
-  };
+export async function loader() {
+  const text = await prisma.text.findFirst({
+    where: { ownerId: null },
+    orderBy: { id: "asc" },
+  });
+
+  if (!text) {
+    throw data("No practice text found. Run: npx prisma db seed", {
+      status: 404,
+    });
+  }
+
+  return { practiceText: text.content };
 }
 
 export default function Practice({ loaderData }: Route.ComponentProps) {

@@ -1,0 +1,57 @@
+// Database schema: the tables, their columns, and how they relate.
+// After changing this file run `npx prisma migrate dev`.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Language {
+  en
+  he
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  texts   Text[]
+  results Result[]
+}
+
+model Text {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  language  Language @default(en)
+  // null = built-in text that everyone can practise on
+  ownerId   Int?
+  createdAt DateTime @default(now())
+
+  owner   User?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  results Result[]
+}
+
+model Result {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  textId      Int
+  wpm         Float
+  accuracy    Float
+  mistakes    Int
+  corrections Int
+  durationMs  Int
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text Text @relation(fields: [textId], references: [id])
+
+  // The history page lists one user's results, newest first.
+  @@index([userId, createdAt])
+}
