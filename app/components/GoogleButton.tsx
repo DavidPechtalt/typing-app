@@ -8,10 +8,7 @@ export function GoogleButton({ redirectTo }: GoogleButtonProps) {
   return (
     <Form method="post" action="/auth/google">
       <input type="hidden" name="redirectTo" value={redirectTo} />
-      <button
-        type="submit"
-        className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-800 shadow-sm hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
-      >
+      <button type="submit" className="btn btn-secondary w-full">
         <svg aria-hidden="true" viewBox="0 0 48 48" className="size-5">
           <path
             fill="#FFC107"

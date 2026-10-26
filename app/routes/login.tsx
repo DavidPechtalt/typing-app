@@ -10,9 +10,7 @@ import { verifyLogin } from "~/models/user.server";
 import { createUserSession, getUserId } from "~/session.server";
 import type { Route } from "./+types/login";
 
-export const meta: Route.MetaFunction = () => [
-  { title: "Log in | Typing App" },
-];
+export const meta: Route.MetaFunction = () => [{ title: "Log in | Keyprint" }];
 
 type FormErrors = {
   email?: string;
@@ -74,7 +72,7 @@ export default function Login({
       : null);
 
   return (
-    <AuthCard title="Log in">
+    <AuthCard title="Log in" subtitle="Welcome back. Your keys missed you.">
       {loaderData.isGoogleEnabled && (
         <>
           <GoogleButton redirectTo={loaderData.redirectTo} />
@@ -99,24 +97,27 @@ export default function Login({
           error={errors?.password}
         />
         {formError && (
-          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          <p
+            role="alert"
+            className="rounded-lg border-2 border-line bg-pink px-3 py-2 text-sm font-semibold text-on-accent"
+          >
             {formError}
           </p>
         )}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60"
+          className="btn btn-primary"
         >
           {isSubmitting ? "Logging in…" : "Log in"}
         </button>
       </Form>
 
-      <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+      <p className="text-center text-sm text-muted">
         No account yet?{" "}
         <Link
           to={`/register?redirectTo=${encodeURIComponent(loaderData.redirectTo)}`}
-          className="font-medium text-blue-700 underline-offset-4 hover:underline dark:text-blue-400"
+          className="link"
         >
           Sign up
         </Link>

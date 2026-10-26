@@ -10,9 +10,7 @@ import { createUser, getUserByEmail } from "~/models/user.server";
 import { createUserSession, getUserId } from "~/session.server";
 import type { Route } from "./+types/register";
 
-export const meta: Route.MetaFunction = () => [
-  { title: "Sign up | Typing App" },
-];
+export const meta: Route.MetaFunction = () => [{ title: "Sign up | Keyprint" }];
 
 type FormErrors = {
   email?: string;
@@ -67,7 +65,10 @@ export default function Register({
   const errors = actionData?.errors;
 
   return (
-    <AuthCard title="Create an account">
+    <AuthCard
+      title="Create an account"
+      subtitle="Save every practice and watch your speed climb."
+    >
       {loaderData.isGoogleEnabled && (
         <>
           <GoogleButton redirectTo={loaderData.redirectTo} />
@@ -94,17 +95,17 @@ export default function Register({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60"
+          className="btn btn-primary"
         >
           {isSubmitting ? "Creating account…" : "Sign up"}
         </button>
       </Form>
 
-      <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+      <p className="text-center text-sm text-muted">
         Already have an account?{" "}
         <Link
           to={`/login?redirectTo=${encodeURIComponent(loaderData.redirectTo)}`}
-          className="font-medium text-blue-700 underline-offset-4 hover:underline dark:text-blue-400"
+          className="link"
         >
           Log in
         </Link>

@@ -1,4 +1,4 @@
-# Typing App
+# Keyprint
 
 A web app for practising typing. You type a passage and get live feedback for each character (correct, wrong, not typed yet). When you finish, you see your words per minute, accuracy, mistakes and corrections.
 

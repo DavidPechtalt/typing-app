@@ -8,14 +8,15 @@ import {
   summarizeResult,
 } from "~/lib/typing";
 import { savePracticeSchema } from "~/lib/validation";
-import { PracticeText } from "~/components/PracticeText";
+import { getCharacterClass, PracticeText } from "~/components/PracticeText";
+import { Stat } from "~/components/Stat";
 import { createResult } from "~/models/result.server";
 import { getFirstBuiltInText, getTextForUser } from "~/models/text.server";
 import { getUserId } from "~/session.server";
 import type { Route } from "./+types/practice";
 
 export const meta: Route.MetaFunction = ({ loaderData }) => [
-  { title: `${loaderData?.text.title ?? "Practice"} | Typing App` },
+  { title: `${loaderData?.text.title ?? "Practice"} | Keyprint` },
 ];
 
 const textIdSchema = z.coerce.number().int().positive();
@@ -210,30 +211,27 @@ function PracticeSession({
   const progressPercent = (typedCharacterCount / targetCharacterCount) * 100;
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-10">
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-10">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div>
-          <Link
-            to="/texts"
-            className="text-sm font-medium text-blue-700 underline-offset-4 hover:underline dark:text-blue-400"
-          >
+          <Link to="/texts" className="link text-sm">
             ← Choose another text
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
             {title}
           </h1>
         </div>
-        <p className="font-mono text-sm text-slate-500 tabular-nums dark:text-slate-400">
+        <p className="tag bg-card font-mono text-sm text-ink tabular-nums">
           {typedCharacterCount} / {targetCharacterCount}
         </p>
       </div>
 
       <div
         aria-hidden="true"
-        className="h-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
+        className="h-3 overflow-hidden rounded-full border-2 border-line bg-card"
       >
         <div
-          className="h-full bg-blue-600 transition-[width] duration-150"
+          className="h-full bg-pink transition-[width] duration-150"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -241,7 +239,7 @@ function PracticeSession({
       <div
         lang={language}
         dir={language === "he" ? "rtl" : "ltr"}
-        className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10 dark:border-slate-800 dark:bg-slate-900"
+        className="card relative p-6 sm:p-10"
       >
         <textarea
           autoFocus
@@ -265,7 +263,7 @@ function PracticeSession({
         />
         <label
           htmlFor="typing-input"
-          className={`block cursor-text ${language === "he" ? "font-sans" : "font-mono"} text-xl leading-loose whitespace-pre-wrap blur-sm transition peer-focus:blur-none peer-disabled:blur-none sm:text-2xl`}
+          className={`block cursor-text ${language === "he" ? "font-sans" : "font-mono"} text-xl leading-[2.1] whitespace-pre-wrap blur-sm transition peer-focus:blur-none peer-disabled:blur-none sm:text-2xl`}
         >
           <PracticeText
             text={practiceText}
@@ -277,70 +275,88 @@ function PracticeSession({
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 flex items-center justify-center peer-focus:hidden peer-disabled:hidden"
         >
-          <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-            Click here to start typing
+          <span className="rounded-full border-2 border-line bg-sun px-5 py-2 font-semibold text-on-accent shadow-[3px_3px_0_var(--shadow)]">
+            Click here and start typing
           </span>
         </p>
       </div>
 
       <ul
         aria-hidden="true"
-        className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-400"
+        className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted"
       >
-        <li className="flex items-center gap-2">
-          <span className="font-mono text-red-600 underline decoration-2 underline-offset-4 dark:text-red-400">
-            a
-          </span>
-          Wrong
-        </li>
-        <li className="flex items-center gap-2">
-          <span className="rounded-sm bg-amber-100 px-1 font-mono dark:bg-amber-500/20">
-            a
-          </span>
-          Corrected
-        </li>
-        <li className="flex items-center gap-2">
-          <span className="rounded-sm bg-blue-100 px-1 font-mono shadow-[inset_2px_0_0_var(--color-blue-600)] dark:bg-blue-500/20">
-            a
-          </span>
-          Next character
-        </li>
+        <LegendItem className={getCharacterClass("incorrect", false)}>
+          Wrong key
+        </LegendItem>
+        <LegendItem className={getCharacterClass("corrected", false)}>
+          Fixed mistake
+        </LegendItem>
+        <LegendItem className={getCharacterClass("pending", true)}>
+          Next key
+        </LegendItem>
       </ul>
 
       <section role="status" aria-label="Typing results">
         {isFinished && (
           <div className="flex flex-col gap-6">
-            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-              <Stat label="WPM" value={Math.round(wordsPerMinute).toString()} />
-              <Stat label="Accuracy" value={`${accuracy.toFixed(1)}%`} />
-              <Stat label="Mistakes" value={mistakeCount.toString()} />
-              <Stat
-                label="Corrected"
-                value={correctedCharacterCount.toString()}
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,14rem)_1fr]">
+              <div className="card flex flex-col justify-between gap-2 bg-pink p-5 text-on-accent">
+                <p className="font-semibold">Words per minute</p>
+                <p className="font-mono text-7xl font-semibold tracking-tight tabular-nums [text-shadow:4px_4px_0_var(--sun)]">
+                  {Math.round(wordsPerMinute)}
+                </p>
+              </div>
+              <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <Stat
+                  label="Accuracy"
+                  value={`${accuracy.toFixed(1)}%`}
+                  highlight
+                />
+                <Stat label="Mistakes" value={mistakeCount.toString()} />
+                <Stat
+                  label="Fixed"
+                  value={correctedCharacterCount.toString()}
+                />
+                <Stat
+                  label="Keys per second"
+                  value={charactersPerSecond.toFixed(2)}
+                />
+              </dl>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <button
+                type="button"
+                autoFocus
+                onClick={onRestart}
+                className="btn btn-primary"
+              >
+                Try again
+              </button>
+              <SaveStatus
+                isLoggedIn={isLoggedIn}
+                loginPath={`/login?redirectTo=${encodeURIComponent(`/practice/${textId}`)}`}
+                state={saveFetcher.state}
+                response={saveFetcher.data}
               />
-              <Stat
-                label="Chars / sec"
-                value={charactersPerSecond.toFixed(2)}
-              />
-            </dl>
-            <button
-              type="button"
-              autoFocus
-              onClick={onRestart}
-              className="self-center rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-            >
-              Restart
-            </button>
-            <SaveStatus
-              isLoggedIn={isLoggedIn}
-              loginPath={`/login?redirectTo=${encodeURIComponent(`/practice/${textId}`)}`}
-              state={saveFetcher.state}
-              response={saveFetcher.data}
-            />
+            </div>
           </div>
         )}
       </section>
     </main>
+  );
+}
+
+type LegendItemProps = {
+  className: string;
+  children: string;
+};
+
+function LegendItem({ className, children }: LegendItemProps) {
+  return (
+    <li className="flex items-center gap-2">
+      <span className={`px-1 font-mono ${className}`}>a</span>
+      {children}
+    </li>
   );
 }
 
@@ -357,17 +373,15 @@ function SaveStatus({
   state,
   response,
 }: SaveStatusProps) {
-  const linkClassName =
-    "font-medium text-blue-700 underline-offset-4 hover:underline dark:text-blue-400";
   let message;
 
   if (!isLoggedIn) {
     message = (
       <>
-        <Link to={loginPath} className={linkClassName}>
+        <Link to={loginPath} className="link">
           Log in
         </Link>{" "}
-        to save your results and see your progress.
+        to keep your results and track your progress.
       </>
     );
   } else if (state !== "idle") {
@@ -375,41 +389,21 @@ function SaveStatus({
   } else if (response?.saved) {
     message = (
       <>
-        Result saved.{" "}
-        <Link to="/history" className={linkClassName}>
-          See your history
+        Saved to your{" "}
+        <Link to="/history" className="link">
+          history
         </Link>
+        .
       </>
     );
   } else if (response?.error) {
     message = (
-      <span className="text-red-600 dark:text-red-400">
-        Not saved: {response.error}
-      </span>
+      <>
+        <span className="tag mr-2 bg-pink">Not saved</span>
+        {response.error}
+      </>
     );
   }
 
-  return (
-    <p className="text-center text-sm text-slate-600 dark:text-slate-400">
-      {message}
-    </p>
-  );
-}
-
-type StatProps = {
-  label: string;
-  value: string;
-};
-
-function Stat({ label, value }: StatProps) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-      <dt className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
-        {label}
-      </dt>
-      <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums">
-        {value}
-      </dd>
-    </div>
-  );
+  return <p className="text-center text-sm text-muted">{message}</p>;
 }

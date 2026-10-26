@@ -3,7 +3,7 @@ import { getTextsForUser } from "~/models/text.server";
 import { getUserId } from "~/session.server";
 import type { Route } from "./+types/texts";
 
-export const meta: Route.MetaFunction = () => [{ title: "Texts | Typing App" }];
+export const meta: Route.MetaFunction = () => [{ title: "Texts | Keyprint" }];
 
 export async function loader({ request }: Route.LoaderArgs) {
   const userId = await getUserId(request);
@@ -20,30 +20,32 @@ export default function Texts({ loaderData }: Route.ComponentProps) {
   const { isLoggedIn, builtInTexts, ownTexts } = loaderData;
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-10 px-4 py-10">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Texts</h1>
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-12 px-4 py-10">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-extrabold tracking-tight">Texts</h1>
+          <p className="mt-2 text-muted">
+            Pick something to type, or bring your own.
+          </p>
+        </div>
         <Link
           to={isLoggedIn ? "/texts/new" : "/login?redirectTo=/texts/new"}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          className="btn btn-primary"
         >
-          {isLoggedIn ? "Add a text" : "Log in to add your own text"}
+          {isLoggedIn ? "+ Add a text" : "Log in to add your own"}
         </Link>
       </div>
 
       {isLoggedIn && (
-        <section className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Your texts</h2>
+        <section className="flex flex-col gap-5">
+          <h2 className="text-2xl font-bold tracking-tight">Your texts</h2>
           {ownTexts.length === 0 ? (
-            <p className="text-slate-600 dark:text-slate-400">
-              You haven&apos;t added any texts yet. Paste one in with{" "}
-              <Link
-                to="/texts/new"
-                className="font-medium text-blue-700 underline-offset-4 hover:underline dark:text-blue-400"
-              >
-                Add a text
-              </Link>
-              .
+            <p className="rounded-xl border-2 border-dashed border-line p-6 text-muted">
+              Nothing here yet.{" "}
+              <Link to="/texts/new" className="link">
+                Paste your first text
+              </Link>{" "}
+              and it will show up here.
             </p>
           ) : (
             <TextList texts={ownTexts} />
@@ -51,8 +53,8 @@ export default function Texts({ loaderData }: Route.ComponentProps) {
         </section>
       )}
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Built-in texts</h2>
+      <section className="flex flex-col gap-5">
+        <h2 className="text-2xl font-bold tracking-tight">Built-in texts</h2>
         <TextList texts={builtInTexts} />
       </section>
     </main>
@@ -70,33 +72,32 @@ type TextListProps = {
 
 function TextList({ texts }: TextListProps) {
   return (
-    <ul className="grid gap-4 sm:grid-cols-2">
+    <ul className="grid gap-5 sm:grid-cols-2">
       {texts.map((text) => (
-        <li
-          key={text.id}
-          className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
-        >
+        <li key={text.id} className="card flex flex-col gap-3 p-5">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="font-semibold">{text.title}</h3>
-            <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-300">
+            <h3 className="text-lg font-bold tracking-tight">{text.title}</h3>
+            <span
+              className={`tag shrink-0 ${text.language === "he" ? "bg-pink" : "bg-sun"}`}
+            >
               {text.language === "he" ? "Hebrew" : "English"}
             </span>
           </div>
           <p
             lang={text.language}
             dir={text.language === "he" ? "rtl" : "ltr"}
-            className="line-clamp-2 text-sm text-slate-600 dark:text-slate-400"
+            className="line-clamp-2 font-mono text-sm text-muted"
           >
             {text.content}
           </p>
-          <div className="mt-auto flex items-center justify-between">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-auto flex items-center justify-between pt-2">
+            <span className="text-sm text-muted">
               {Array.from(text.content).length} characters
             </span>
             <Link
               to={`/practice/${text.id}`}
               aria-label={`Practise ${text.title}`}
-              className="rounded-md px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
+              className="btn btn-secondary btn-small"
             >
               Practise →
             </Link>

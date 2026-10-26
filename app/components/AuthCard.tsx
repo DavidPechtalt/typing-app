@@ -2,14 +2,18 @@ import type { ReactNode } from "react";
 
 type AuthCardProps = {
   title: string;
+  subtitle: string;
   children: ReactNode;
 };
 
-export function AuthCard({ title, children }: AuthCardProps) {
+export function AuthCard({ title, subtitle, children }: AuthCardProps) {
   return (
     <main className="flex flex-1 items-center justify-center px-4 py-12">
-      <div className="flex w-full max-w-sm flex-col gap-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+      <div className="card flex w-full max-w-sm flex-col gap-6 p-8">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
+          <p className="mt-1 text-muted">{subtitle}</p>
+        </div>
         {children}
       </div>
     </main>
@@ -18,10 +22,10 @@ export function AuthCard({ title, children }: AuthCardProps) {
 
 export function OrDivider() {
   return (
-    <div className="flex items-center gap-3 text-xs text-slate-500 uppercase dark:text-slate-400">
-      <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+    <div className="flex items-center gap-3 text-sm font-semibold text-muted">
+      <span className="h-0.5 flex-1 bg-line/25" />
       or
-      <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+      <span className="h-0.5 flex-1 bg-line/25" />
     </div>
   );
 }

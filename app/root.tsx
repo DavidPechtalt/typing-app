@@ -32,7 +32,7 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;500&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=Rubik:wght@400..700&display=swap",
   },
 ];
 
@@ -55,10 +55,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function navLinkClassName({ isActive }: { isActive: boolean }) {
-  return `rounded-md px-3 py-1.5 text-sm font-medium ${
+  return `rounded-md border-2 px-3 py-1 text-sm font-semibold transition-colors ${
     isActive
-      ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+      ? "border-line bg-sun text-on-accent"
+      : "border-transparent text-muted hover:text-ink"
   }`;
 }
 
@@ -67,22 +67,16 @@ export default function App({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-slate-200 bg-white/80 dark:border-slate-800 dark:bg-slate-900/80">
+      <header className="border-b-2 border-line bg-paper">
         <nav
           aria-label="Main"
-          className="mx-auto flex h-14 max-w-4xl items-center gap-2 px-4 sm:gap-4"
+          className="mx-auto flex h-16 max-w-5xl items-center gap-1 px-4 sm:gap-2"
         >
-          <Link
-            to="/"
-            className="flex items-center gap-2 font-semibold tracking-tight"
-          >
-            <span
-              aria-hidden="true"
-              className="rounded-md bg-blue-600 px-1.5 py-0.5 font-mono text-sm text-white"
-            >
-              Aa
+          <Link to="/" className="mr-2 flex items-center gap-2 sm:mr-4">
+            <Logo />
+            <span className="hidden text-xl font-extrabold tracking-tight sm:inline">
+              Keyprint
             </span>
-            Typing App
           </Link>
           <NavLink to="/practice" className={navLinkClassName}>
             Practice
@@ -98,14 +92,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
           <div className="ml-auto flex items-center gap-3">
             {user ? (
               <>
-                <span className="hidden max-w-48 truncate text-sm text-slate-600 sm:inline dark:text-slate-400">
+                <span className="hidden max-w-48 truncate text-sm text-muted md:inline">
                   {user.email}
                 </span>
                 <Form method="post" action="/logout">
-                  <button
-                    type="submit"
-                    className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-                  >
+                  <button type="submit" className="btn btn-secondary btn-small">
                     Log out
                   </button>
                 </Form>
@@ -114,14 +105,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
               <>
                 <Link
                   to="/login"
-                  className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                  className="hidden text-sm font-semibold text-muted hover:text-ink sm:inline"
                 >
                   Log in
                 </Link>
-                <Link
-                  to="/register"
-                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-                >
+                <Link to="/register" className="btn btn-primary btn-small">
                   Sign up
                 </Link>
               </>
@@ -134,16 +122,28 @@ export default function App({ loaderData }: Route.ComponentProps) {
   );
 }
 
+// A single keycap with the letter K.
+function Logo() {
+  return (
+    <span
+      aria-hidden="true"
+      className="grid size-9 place-items-center rounded-lg border-2 border-line bg-sun font-mono text-lg font-semibold text-on-accent shadow-[2px_2px_0_var(--shadow)]"
+    >
+      K
+    </span>
+  );
+}
+
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
+  let message = "Something went wrong";
   let details = "An unexpected error occurred.";
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message = error.status === 404 ? "Page not found" : `Error ${error.status}`;
     details =
       error.status === 404
-        ? "The requested page could not be found."
+        ? "There is nothing to type here. Check the address or go back home."
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
@@ -151,11 +151,17 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-start gap-6 px-4 py-20">
+      <p className="tag bg-pink">Oops</p>
+      <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+        {message}
+      </h1>
+      <p className="text-lg text-muted">{details}</p>
+      <Link to="/" className="btn btn-primary">
+        Back to home
+      </Link>
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
+        <pre className="card w-full overflow-x-auto p-4 text-xs">
           <code>{stack}</code>
         </pre>
       )}

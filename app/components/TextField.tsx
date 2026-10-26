@@ -1,7 +1,3 @@
-// Shared look for inputs, text areas and selects.
-export const fieldClassName =
-  "rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30 aria-invalid:border-red-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100";
-
 type TextFieldProps = {
   label: string;
   name: string;
@@ -21,7 +17,7 @@ export function TextField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={name} className="text-sm font-medium">
+      <label htmlFor={name} className="text-sm font-semibold">
         {label}
       </label>
       <input
@@ -32,13 +28,30 @@ export function TextField({
         required
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={fieldClassName}
+        className="field"
       />
-      {error && (
-        <p id={errorId} className="text-sm text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      )}
+      <FieldError id={errorId} message={error} />
     </div>
+  );
+}
+
+type FieldErrorProps = {
+  id: string;
+  message: string | undefined;
+};
+
+export function FieldError({ id, message }: FieldErrorProps) {
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <p id={id} className="flex items-center gap-2 text-sm font-medium">
+      <span
+        aria-hidden="true"
+        className="size-2.5 shrink-0 rounded-full bg-pink"
+      />
+      {message}
+    </p>
   );
 }
