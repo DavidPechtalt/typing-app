@@ -24,11 +24,9 @@ export default function Practice() {
     charactersPerSecond,
     accuracy,
   } = summarizeResult(characterStatuses, elapsedSeconds);
-  const targetCharacterCount = Array.from(typedText).length;
-
-  const isFinished = Array.from(typedText).length >= targetCharacterCount;
-
+  const targetCharacterCount = Array.from(practiceText).length;
   const typedCharacterCount = Array.from(typedText).length;
+  const isFinished = typedCharacterCount >= targetCharacterCount;
 
   useEffect(() => {
     inputRef.current?.focus();
