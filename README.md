@@ -1,87 +1,56 @@
-# Welcome to React Router!
+# Typing App
 
-A modern, production-ready template for building full-stack React applications using React Router.
+A web app for practising typing. You type a passage and get live feedback for each character (correct, wrong, not typed yet). When you finish, you see your words per minute, accuracy, mistakes and corrections.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+Built with React Router (framework mode, the successor to Remix), TypeScript and Tailwind CSS.
 
-## Features
+## Requirements
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+- Node.js 22 or newer
+- npm
 
-## Getting Started
-
-### Installation
-
-Install the dependencies:
+## Getting started
 
 ```bash
 npm install
-```
-
-### Development
-
-Start the development server with HMR:
-
-```bash
 npm run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
+Open http://localhost:5173 and choose **Start practising**.
 
-## Building for Production
+## Scripts
 
-Create a production build:
+| Command                | What it does                              |
+| ---------------------- | ----------------------------------------- |
+| `npm run dev`          | Start the development server              |
+| `npm run build`        | Create a production build in `build/`     |
+| `npm start`            | Run the production build                  |
+| `npm test`             | Run the unit tests (Vitest)               |
+| `npm run typecheck`    | Generate route types and check TypeScript |
+| `npm run lint`         | Check the code with ESLint                |
+| `npm run format`       | Format all files with Prettier            |
+| `npm run format:check` | Check formatting without changing files   |
+
+## Project structure
+
+```
+app/
+  routes/       one file per page (loader, action, meta and the page component)
+  components/   reusable UI pieces
+  lib/          pure logic with no React (character comparison, statistics) and its tests
+  root.tsx      the HTML layout and the top-level error page
+  routes.ts     maps URLs to route files
+```
+
+## How the results are calculated
+
+- **WPM:** correct characters ÷ 5 ÷ minutes.
+- **Mistakes:** positions that were typed wrong at any point, including ones that were corrected later.
+- **Accuracy:** characters typed right the first time ÷ total characters.
+
+## Running with Docker
 
 ```bash
-npm run build
+docker build -t typing-app .
+docker run -p 3000:3000 typing-app
 ```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.

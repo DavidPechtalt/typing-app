@@ -42,7 +42,7 @@ export function calculateWordsPerMinute(
     return 0;
   }
 
-  return Math.round((correctCharacterCount / 5 / elapsedSeconds) * 60);
+  return (correctCharacterCount / 5 / elapsedSeconds) * 60;
 }
 
 export function calculateCharactersPerSecond(
@@ -82,7 +82,7 @@ export function summarizeResult(
     (status) => status === "corrected",
   ).length;
   const mistakeCount = characterStatuses.filter(
-    (status) => status === "incorrect" || status == "corrected",
+    (status) => status === "incorrect" || status === "corrected",
   ).length;
   const wordsPerMinute = calculateWordsPerMinute(
     correctCharacterCount,
@@ -107,7 +107,7 @@ export function summarizeResult(
 }
 
 export function recordIncorrectPositions(
-  characterStatuses:readonly CharacterStatus[],
+  characterStatuses: readonly CharacterStatus[],
   previouslyIncorrectPositions: ReadonlySet<number>,
 ): Set<number> {
   const nextIncorrectPositions = new Set(previouslyIncorrectPositions);
