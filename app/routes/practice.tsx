@@ -174,11 +174,6 @@ function PracticeSession({
     setTypedText(value);
   }
 
-  useEffect(() => {
-    if (!isFinished) return;
-
-    fetcher.submit({ textId: String(practiceText) });
-  });
   const progressPercent = (typedCharacterCount / targetCharacterCount) * 100;
 
   return (

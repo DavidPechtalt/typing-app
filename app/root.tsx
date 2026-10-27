@@ -52,7 +52,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
-  return `rounded-md px-3 py-1.5 text-sm font-medium ${
+  return `rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap ${
     isActive
       ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
@@ -78,7 +78,8 @@ export default function App() {
             >
               Aa
             </span>
-            Typing App
+            {/* On a phone only the "Aa" logo shows, so the nav fits on one line; sr-only keeps the link's name for screen readers. */}
+            <span className="sr-only sm:not-sr-only">Typing App</span>
           </Link>
           <div className="flex items-center gap-1">
             <NavLink to="/practice" className={navLinkClass}>
@@ -86,6 +87,12 @@ export default function App() {
             </NavLink>
             {user ? (
               <>
+                {/* Convenience only; the admin pages check the role on the server. */}
+                {user.role === "ADMIN" && (
+                  <NavLink to="/admin" className={navLinkClass}>
+                    Admin
+                  </NavLink>
+                )}
                 <span className="hidden px-3 text-sm text-slate-500 sm:inline dark:text-slate-400">
                   {user.email}
                 </span>
@@ -123,11 +130,18 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
+    message =
+      error.status === 404 || error.status === 403
+        ? String(error.status)
+        : "Error";
+    // requireAdmin throws a 403 with no statusText, so give it its own message.
+    if (error.status === 404) {
+      details = "The requested page could not be found.";
+    } else if (error.status === 403) {
+      details = "You don't have permission to open this page.";
+    } else {
+      details = error.statusText || details;
+    }
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
     stack = error.stack;

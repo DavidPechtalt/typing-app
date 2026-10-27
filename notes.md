@@ -13,6 +13,26 @@ Things I learned:
 - **Quoted table names.** Prisma creates the table as `"User"` with a capital U. Postgres lowercases names that are not in double quotes, so `UPDATE User` would look for a table called `user`.
 - **The enum protects the data.** `'admin'` (lowercase) is rejected by Postgres; only the exact enum values are allowed.
 
+## 2026-10-27: Admin pages and two bug fixes
+
+What I built:
+
+- `/admin/users`, `/admin/texts`, `/admin/results`: tables of everything in the database, each row with a Delete button. `AdminNav` (tab bar) and `DeleteButton` are shared components. Every loader and action calls `requireAdmin` first. Admin accounts show "Protected" and the action refuses to delete them.
+- `/admin` cards link to those pages; the header shows "Admin" only to admins.
+- 403 now has its own message in the root `ErrorBoundary`.
+- `app/lib/format.ts`: `formatDate` and `formatDuration`, with tests.
+
+Bugs fixed:
+
+- **Practices were never saved.** A second `useEffect` in `practice.tsx` with no dependency array called `fetcher.submit({ textId: practiceText })` on every render after finishing. A fetcher only keeps its latest submission, so this GET cancelled the real POST before the server finished, and then kept firing. The action itself was fine (a direct POST saved a row). Deleting the stray effect fixed it: now one POST, one reload of the loader.
+- **Login sent me back to `/admin.data`.** When React Router navigates inside the app it fetches `<page>.data`. If a guard redirects that request, `redirectTo` was the data URL, so after login I saw raw data. `pagePathFromRequestPath` in `app/lib/redirect.ts` strips `.data` (and maps `/_root.data` to `/`).
+
+Things I learned:
+
+- **`sr-only` is `position: absolute`.** Inside a table that scrolls (`overflow-x-auto`), it escaped the scroll box and made the whole page wider on a phone. `relative` on the scroll box keeps it inside.
+- **`dir="auto"`** lets the browser show Hebrew right-to-left without me deciding per text.
+- **A link can't wrap `<dt>`/`<dd>`.** To make a whole stat card clickable, the link sits in the `<dt>` and its `::after` covers the card (`after:absolute after:inset-0` on the link, `relative` on the card).
+
 ## 2026-10-22: Saving results
 
 What I built:

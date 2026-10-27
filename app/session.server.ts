@@ -1,5 +1,6 @@
 import { createCookieSessionStorage, redirect } from "react-router";
 import { db } from "~/db.server";
+import { pagePathFromRequestPath } from "~/lib/redirect";
 
 const sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
@@ -41,7 +42,10 @@ export async function getUser(request: Request) {
 
 function loginPathWithRedirect(request: Request) {
   const url = new URL(request.url);
-  const searchParams = new URLSearchParams({ redirectTo: url.pathname });
+  // Strip ".data" so a data request redirects back to the page itself.
+  const searchParams = new URLSearchParams({
+    redirectTo: pagePathFromRequestPath(url.pathname),
+  });
   return `/login?${searchParams}`;
 }
 

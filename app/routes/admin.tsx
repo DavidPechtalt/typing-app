@@ -1,4 +1,6 @@
 // Admin overview: how many users, texts and practices the app has. Admins only.
+import { Link } from "react-router";
+import { AdminNav } from "~/components/AdminNav";
 import { requireAdmin } from "~/session.server";
 import { db } from "~/db.server";
 import type { Route } from "./+types/admin";
@@ -23,19 +25,28 @@ type CountKey = keyof Omit<LoaderData, "admin">;
 type StatTile = {
   key: CountKey;
   label: string;
+  // The admin page that lists these rows.
+  href: string;
   description: string;
 };
 
 const statTiles: StatTile[] = [
-  { key: "usersCount", label: "Users", description: "Registered accounts" },
+  {
+    key: "usersCount",
+    label: "Users",
+    href: "/admin/users",
+    description: "Registered accounts",
+  },
   {
     key: "textsCount",
     label: "Texts",
+    href: "/admin/texts",
     description: "Built-in and uploaded texts",
   },
   {
     key: "resultsCount",
     label: "Practices",
+    href: "/admin/results",
     description: "Finished practices saved",
   },
 ];
@@ -44,21 +55,31 @@ export default function Admin({ loaderData }: Route.ComponentProps) {
   const { admin } = loaderData;
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-10">
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Signed in as {admin.email}
-        </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-baseline justify-between">
+          <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Signed in as {admin.email}
+          </p>
+        </div>
+        <AdminNav />
       </div>
 
       <dl className="grid gap-3 sm:grid-cols-3">
         {statTiles.map((tile) => (
           <div
             key={tile.key}
-            className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
+            // relative + the link's after:inset-0 make the whole card clickable,
+            // while the HTML stays a valid <dl> (a link can't wrap <dt>/<dd>).
+            className="relative rounded-xl border border-slate-200 bg-white p-5 transition-colors focus-within:border-blue-600 hover:border-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:focus-within:border-blue-400 dark:hover:border-blue-400"
           >
             <dt className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
-              {tile.label}
+              <Link
+                to={tile.href}
+                className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
+              >
+                {tile.label}
+              </Link>
             </dt>
             {/* Fixed locale so server and browser format the same (no hydration mismatch). */}
             <dd className="mt-1 font-mono text-3xl font-semibold tabular-nums">
