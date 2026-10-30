@@ -1,17 +1,22 @@
 # Notes
 
-## 2026-10-25: User roles (start of the admin section)
+## 2026-10-30: Two languages and a new look
 
 What I built:
 
-- A `Role` enum (`USER`, `ADMIN`) in the schema and a `role` field on `User` with `@default(USER)`. Migration `20261025115737_add_user_role` creates the Postgres type and adds the column; the default fills `USER` into every existing row, which is why adding a `NOT NULL` column to a table that already has rows works.
-- Made my own account admin with SQL instead of through the app, so there is no way to register as admin: `npx prisma db execute --stdin <<< "UPDATE \"User\" SET role = 'ADMIN' WHERE email = '...';"`
+- **Two interface languages.** `app/lib/i18n.ts` holds every string of the interface twice, English and Hebrew, as one flat dictionary per language (`"nav.practice": "Practice"`). `translate(locale, key, vars)` looks a key up and fills `{placeholders}`. No library: the whole mechanism is one file, and TypeScript checks that both dictionaries have the same keys.
+- **Where the choice lives.** A small `locale` cookie (`app/lib/locale.server.ts`), separate from the session so guests keep their choice. `getLocale(request)` reads it, falls back to the browser's `Accept-Language`, then English. The root loader returns the locale; the `useTranslate()` hook reads it with `useRouteLoaderData("root")`, so any component can call `t("key")`.
+- **The switch.** Two buttons, EN / עב, in the header: one form that POSTs to `/locale` with the locale and the current path; the action sets the cookie and redirects back.
+- **Right-to-left.** `<html lang dir>` comes from the locale, so Hebrew flips the whole layout. All spacing uses logical utilities (`text-start`, `ms-2`, `pe-4`) instead of physical ones, so one class works in both directions.
+- **Server messages too.** Actions get a translator with `getTranslator(request)` so validation and error messages come back in the user's language. Zod schemas that carry messages are built per request (`loginSchema(t)`).
+- **Design tokens.** Every colour is a role (`--surface`, `--ink`, `--accent`) defined once for light and once for dark in `app.css` and exposed to Tailwind with `@theme inline`, so components write `bg-surface` instead of `bg-white dark:bg-slate-900` pairs. Serif headings (Lora, with Frank Ruhl Libre for Hebrew), Inter and Heebo for body, JetBrains Mono for the typed text. One yellow highlight for the next character and the main button, red only for mistakes.
 
 Things I learned:
 
-- **Prisma 7: `migrate dev` no longer runs `generate`.** The database got the `role` column but the TypeScript client in `generated/prisma` did not know it, and a query selecting `role` failed with "Unknown field `role`". After every schema change: `npx prisma migrate dev`, then `npx prisma generate`, then restart the dev server.
-- **Quoted table names.** Prisma creates the table as `"User"` with a capital U. Postgres lowercases names that are not in double quotes, so `UPDATE User` would look for a table called `user`.
-- **The enum protects the data.** `'admin'` (lowercase) is rejected by Postgres; only the exact enum values are allowed.
+- **A font stack can mix scripts.** `font-family: "Lora", "Frank Ruhl Libre", serif`: the browser takes each glyph from the first font that has it.
+- **Logical CSS properties.** `margin-inline-start` (Tailwind `ms-*`) means "the side where text starts": left in English, right in Hebrew. Writing every page with logical classes once is what makes `dir="rtl"` on `<html>` enough.
+- **React Router cookies are encoded.** `createCookie` stores values as base64 JSON, so a hand-written `Cookie: locale=he` is not parsed; the real browser cookie is.
+- **Tailwind v4 `@theme inline`** lets a utility like `bg-surface` point at a CSS variable that changes under `prefers-color-scheme: dark`.
 
 ## 2026-10-27: Admin pages and two bug fixes
 
@@ -32,6 +37,19 @@ Things I learned:
 - **`sr-only` is `position: absolute`.** Inside a table that scrolls (`overflow-x-auto`), it escaped the scroll box and made the whole page wider on a phone. `relative` on the scroll box keeps it inside.
 - **`dir="auto"`** lets the browser show Hebrew right-to-left without me deciding per text.
 - **A link can't wrap `<dt>`/`<dd>`.** To make a whole stat card clickable, the link sits in the `<dt>` and its `::after` covers the card (`after:absolute after:inset-0` on the link, `relative` on the card).
+
+## 2026-10-25: User roles (start of the admin section)
+
+What I built:
+
+- A `Role` enum (`USER`, `ADMIN`) in the schema and a `role` field on `User` with `@default(USER)`. Migration `20261025115737_add_user_role` creates the Postgres type and adds the column; the default fills `USER` into every existing row, which is why adding a `NOT NULL` column to a table that already has rows works.
+- Made my own account admin with SQL instead of through the app, so there is no way to register as admin: `npx prisma db execute --stdin <<< "UPDATE \"User\" SET role = 'ADMIN' WHERE email = '...';"`
+
+Things I learned:
+
+- **Prisma 7: `migrate dev` no longer runs `generate`.** The database got the `role` column but the TypeScript client in `generated/prisma` did not know it, and a query selecting `role` failed with "Unknown field `role`". After every schema change: `npx prisma migrate dev`, then `npx prisma generate`, then restart the dev server.
+- **Quoted table names.** Prisma creates the table as `"User"` with a capital U. Postgres lowercases names that are not in double quotes, so `UPDATE User` would look for a table called `user`.
+- **The enum protects the data.** `'admin'` (lowercase) is rejected by Postgres; only the exact enum values are allowed.
 
 ## 2026-10-22: Saving results
 

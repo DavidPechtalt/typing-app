@@ -1,8 +1,8 @@
-// Delete button for one table row in the admin pages. Posts { id } to the
-// current route's action.
+// Delete button for one table row. Posts { id } to the current route's action.
 import { useFetcher } from "react-router";
+import { useTranslate } from "~/lib/use-translate";
 
-// What every admin delete action returns, so this component can show an error.
+// What every delete action returns, so this component can show an error.
 export type DeleteActionData = { error: string | null };
 
 type DeleteButtonProps = {
@@ -14,6 +14,7 @@ type DeleteButtonProps = {
 };
 
 export function DeleteButton({ id, label, confirmMessage }: DeleteButtonProps) {
+  const t = useTranslate();
   // One fetcher per row: each row has its own pending state, and the page
   // does not navigate. After the action finishes, React Router reloads the
   // page's loader, so the deleted row disappears from the table.
@@ -35,13 +36,13 @@ export function DeleteButton({ id, label, confirmMessage }: DeleteButtonProps) {
         type="submit"
         aria-label={label}
         disabled={isDeleting}
-        className="rounded-md px-2.5 py-1 text-sm font-medium text-red-600 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950"
+        className="rounded-md px-3 py-1 text-sm font-medium text-wrong transition-colors hover:bg-wrong-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wrong disabled:opacity-60"
       >
-        {isDeleting ? "Deleting…" : "Delete"}
+        {isDeleting ? t("deleting") : t("delete")}
       </button>
       {/* role="alert" makes screen readers announce the error as soon as it appears. */}
       {error && (
-        <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+        <p role="alert" className="text-xs text-wrong">
           {error}
         </p>
       )}

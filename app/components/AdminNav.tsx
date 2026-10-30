@@ -1,31 +1,33 @@
 // Tab bar shared by all admin pages.
 import { NavLink } from "react-router";
+import { useTranslate } from "~/lib/use-translate";
 
 const tabs = [
   // `end` makes "Overview" active only on exactly /admin, not on /admin/users too.
-  { to: "/admin", label: "Overview", end: true },
-  { to: "/admin/users", label: "Users", end: false },
-  { to: "/admin/texts", label: "Texts", end: false },
-  { to: "/admin/results", label: "Practices", end: false },
-];
+  { to: "/admin", key: "admin.tab.overview", end: true },
+  { to: "/admin/stats", key: "admin.tab.stats", end: false },
+  { to: "/admin/users", key: "admin.tab.users", end: false },
+  { to: "/admin/texts", key: "admin.tab.texts", end: false },
+  { to: "/admin/results", key: "admin.tab.practices", end: false },
+] as const;
 
-// NavLink calls this with isActive, so the current tab gets the highlighted
-// style. Same look as the main header's links in root.tsx.
+// NavLink calls this with isActive, so the current tab gets the yellow underline.
 function tabClass({ isActive }: { isActive: boolean }) {
-  return `rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap ${
+  return `whitespace-nowrap border-b-2 py-1 text-sm font-medium transition-colors ${
     isActive
-      ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+      ? "border-accent text-ink"
+      : "border-transparent text-ink-muted hover:border-line-strong hover:text-ink"
   }`;
 }
 
 export function AdminNav() {
+  const t = useTranslate();
   return (
     // aria-label tells screen readers this is a second navigation, apart from the header's "Main".
-    <nav aria-label="Admin" className="-mx-1 flex gap-1 overflow-x-auto px-1">
+    <nav aria-label={t("nav.admin")} className="flex gap-5 overflow-x-auto">
       {tabs.map((tab) => (
         <NavLink key={tab.to} to={tab.to} end={tab.end} className={tabClass}>
-          {tab.label}
+          {t(tab.key)}
         </NavLink>
       ))}
     </nav>

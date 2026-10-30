@@ -3,13 +3,17 @@ import { data } from "react-router";
 import { z } from "zod";
 import { AdminNav } from "~/components/AdminNav";
 import { DeleteButton, type DeleteActionData } from "~/components/DeleteButton";
+import { PageHeader } from "~/components/PageHeader";
 import { db } from "~/db.server";
 import { formatDate } from "~/lib/format";
+import { plural } from "~/lib/i18n";
+import { getTranslator } from "~/lib/locale.server";
+import { useLocale, useTranslate } from "~/lib/use-translate";
 import { requireAdmin } from "~/session.server";
 import type { Route } from "./+types/admin.users";
 
 export const meta: Route.MetaFunction = () => [
-  { title: "Users | Admin | Typing App" },
+  { title: "Users · Admin · Keystroke" },
 ];
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -37,13 +41,14 @@ const deleteSchema = z.object({ id: z.coerce.number().int().positive() });
 export async function action({ request }: Route.ActionArgs) {
   // Every action needs the guard too: anyone can POST here with curl, page or not.
   await requireAdmin(request);
+  const t = await getTranslator(request);
 
   const parsed = deleteSchema.safeParse(
     Object.fromEntries(await request.formData()),
   );
   if (!parsed.success) {
     return data<DeleteActionData>(
-      { error: "Invalid user id." },
+      { error: t("admin.users.err.id") },
       { status: 400 },
     );
   }
@@ -55,7 +60,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (!target) {
     // Probably deleted already, e.g. in another tab.
     return data<DeleteActionData>(
-      { error: "This user no longer exists." },
+      { error: t("admin.users.err.gone") },
       { status: 404 },
     );
   }
@@ -63,7 +68,7 @@ export async function action({ request }: Route.ActionArgs) {
   // (including your own) can't be deleted here, so the app always keeps an admin.
   if (target.role === "ADMIN") {
     return data<DeleteActionData>(
-      { error: "Admin accounts can't be deleted." },
+      { error: t("admin.users.err.admin") },
       { status: 403 },
     );
   }
@@ -75,83 +80,86 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function AdminUsers({ loaderData }: Route.ComponentProps) {
   const { users } = loaderData;
+  const t = useTranslate();
+  const locale = useLocale();
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-10">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-baseline justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {users.length} {users.length === 1 ? "account" : "accounts"}
-          </p>
-        </div>
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-5 py-10">
+      <PageHeader
+        title={t("admin.tab.users")}
+        aside={plural(t, "admin.users.count", users.length)}
+      >
         <AdminNav />
-      </div>
+      </PageHeader>
 
       {/* overflow-x-auto scrolls the table sideways on a phone; relative keeps the absolutely positioned sr-only header inside that scroll box. */}
-      <div className="relative overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs tracking-wide text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
+      <div className="card relative overflow-x-auto">
+        <table className="w-full text-start text-sm">
+          <thead className="eyebrow border-b border-line">
             <tr>
               {/* scope="col" tells screen readers each header labels a column. */}
-              <th scope="col" className="px-4 py-3 font-medium">
-                Email
+              <th scope="col" className="px-4 py-3 text-start font-medium">
+                {t("col.email")}
               </th>
-              <th scope="col" className="px-4 py-3 font-medium">
-                Role
+              <th scope="col" className="px-4 py-3 text-start font-medium">
+                {t("col.role")}
               </th>
-              <th scope="col" className="px-4 py-3 font-medium">
-                Joined
+              <th scope="col" className="px-4 py-3 text-start font-medium">
+                {t("col.joined")}
               </th>
-              <th scope="col" className="px-4 py-3 text-right font-medium">
-                Texts
+              <th scope="col" className="px-4 py-3 text-end font-medium">
+                {t("col.texts")}
               </th>
-              <th scope="col" className="px-4 py-3 text-right font-medium">
-                Practices
+              <th scope="col" className="px-4 py-3 text-end font-medium">
+                {t("col.practices")}
               </th>
               <th scope="col" className="px-4 py-3">
-                <span className="sr-only">Actions</span>
+                <span className="sr-only">{t("col.actions")}</span>
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+          <tbody className="divide-y divide-line">
             {users.map((user) => (
               <tr key={user.id}>
-                <td className="px-4 py-3 font-medium whitespace-nowrap">
+                <td
+                  dir="ltr"
+                  className="px-4 py-3 text-start font-medium whitespace-nowrap"
+                >
                   {user.email}
                 </td>
                 <td className="px-4 py-3">
-                  {/* Admins get a blue badge so they stand out in the list. */}
                   <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      user.role === "ADMIN"
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
-                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                    }`}
+                    className={`pill ${user.role === "ADMIN" ? "bg-accent text-accent-ink" : ""}`}
                   >
-                    {user.role === "ADMIN" ? "Admin" : "User"}
+                    {user.role === "ADMIN"
+                      ? t("admin.role.admin")
+                      : t("admin.role.user")}
                   </span>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400">
-                  {formatDate(user.createdAt)}
+                <td className="px-4 py-3 whitespace-nowrap text-ink-muted">
+                  {formatDate(user.createdAt, locale)}
                 </td>
-                <td className="px-4 py-3 text-right font-mono tabular-nums">
+                <td className="px-4 py-3 text-end font-mono tabular-nums">
                   {user._count.texts}
                 </td>
-                <td className="px-4 py-3 text-right font-mono tabular-nums">
+                <td className="px-4 py-3 text-end font-mono tabular-nums">
                   {user._count.results}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-end">
                   {/* No button for admins: the action refuses anyway, so don't offer it. */}
                   {user.role === "ADMIN" ? (
-                    <span className="text-xs text-slate-400 dark:text-slate-500">
-                      Protected
+                    <span className="text-xs text-ink-faint">
+                      {t("admin.protected")}
                     </span>
                   ) : (
                     <DeleteButton
                       id={user.id}
-                      label={`Delete user ${user.email}`}
-                      confirmMessage={`Delete ${user.email}? Their ${user._count.texts} texts and ${user._count.results} practices will be deleted too.`}
+                      label={t("admin.users.delete", { email: user.email })}
+                      confirmMessage={t("admin.users.deleteConfirm", {
+                        email: user.email,
+                        texts: user._count.texts,
+                        practices: user._count.results,
+                      })}
                     />
                   )}
                 </td>

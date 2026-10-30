@@ -11,24 +11,25 @@ import bcrypt from "bcryptjs";
 import { db } from "~/db.server";
 import { createUserSession, getUserId } from "~/session.server";
 import { safeRedirect } from "~/lib/redirect";
+import type { Translate } from "~/lib/i18n";
+import { getTranslator } from "~/lib/locale.server";
+import { useTranslate } from "~/lib/use-translate";
 import type { Route } from "./+types/login";
 
-export const meta: Route.MetaFunction = () => [
-  { title: "Log in | Typing App" },
-];
+export const meta: Route.MetaFunction = () => [{ title: "Log in · Keystroke" }];
 
-const loginSchema = z.object({
-  // Lowercased so one inbox can only have one account (Postgres compares exactly).
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .pipe(z.email("Enter a valid email address")),
-  password: z.string().min(1, "Enter your password"),
-});
-
-// Same message for unknown email and wrong password, so the form never confirms which emails exist.
-const WRONG_CREDENTIALS = "Wrong email or password";
+// Built per request so the messages are in the user's language.
+function loginSchema(t: Translate) {
+  return z.object({
+    // Lowercased so one inbox can only have one account (Postgres compares exactly).
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .pipe(z.email(t("auth.err.email"))),
+    password: z.string().min(1, t("login.err.password")),
+  });
+}
 
 function getRedirectTo(request: Request): string {
   return safeRedirect(new URL(request.url).searchParams.get("redirectTo"));
@@ -41,8 +42,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const t = await getTranslator(request);
   const formData = await request.formData();
-  const result = loginSchema.safeParse(Object.fromEntries(formData));
+  const result = loginSchema(t).safeParse(Object.fromEntries(formData));
 
   if (!result.success) {
     const { fieldErrors } = z.flattenError(result.error);
@@ -68,13 +70,14 @@ export async function action({ request }: Route.ActionArgs) {
   const passwordMatches =
     user !== null && (await bcrypt.compare(password, user.passwordHash));
 
+  // Same message for unknown email and wrong password, so the form never confirms which emails exist.
   if (!user || !passwordMatches) {
     return data(
       {
         errors: {
           email: undefined,
           password: undefined,
-          form: WRONG_CREDENTIALS,
+          form: t("login.err.wrong"),
         },
       },
       { status: 400 },
@@ -85,6 +88,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Login({ actionData }: Route.ComponentProps) {
+  const t = useTranslate();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const [searchParams] = useSearchParams();
@@ -94,22 +98,19 @@ export default function Login({ actionData }: Route.ComponentProps) {
   const errors = actionData?.errors;
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-16">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-5 py-16">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Log in</h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Welcome back. Pick up where you left off.
-        </p>
+        <h1 className="font-display text-4xl tracking-tight">
+          {t("login.title")}
+        </h1>
+        <p className="mt-1 text-sm text-ink-muted">{t("login.lead")}</p>
       </div>
 
-      <Form
-        method="post"
-        className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-      >
+      <Form method="post" className="card flex flex-col gap-4 p-6">
         {errors?.form && (
           <p
             role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+            className="rounded-md border border-wrong/30 bg-wrong-soft px-3 py-2 text-sm text-wrong"
           >
             {errors.form}
           </p>
@@ -117,7 +118,7 @@ export default function Login({ actionData }: Route.ComponentProps) {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="email" className="text-sm font-medium">
-            Email
+            {t("auth.email")}
           </label>
           <input
             id="email"
@@ -125,15 +126,13 @@ export default function Login({ actionData }: Route.ComponentProps) {
             type="email"
             autoComplete="email"
             required
+            dir="ltr"
             aria-invalid={errors?.email ? true : undefined}
             aria-describedby={errors?.email ? "email-error" : undefined}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            className="field"
           />
           {errors?.email && (
-            <p
-              id="email-error"
-              className="text-sm text-red-600 dark:text-red-400"
-            >
+            <p id="email-error" className="text-sm text-wrong">
               {errors.email}
             </p>
           )}
@@ -141,7 +140,7 @@ export default function Login({ actionData }: Route.ComponentProps) {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="password" className="text-sm font-medium">
-            Password
+            {t("auth.password")}
           </label>
           <input
             id="password"
@@ -149,15 +148,13 @@ export default function Login({ actionData }: Route.ComponentProps) {
             type="password"
             autoComplete="current-password"
             required
+            dir="ltr"
             aria-invalid={errors?.password ? true : undefined}
             aria-describedby={errors?.password ? "password-error" : undefined}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            className="field"
           />
           {errors?.password && (
-            <p
-              id="password-error"
-              className="text-sm text-red-600 dark:text-red-400"
-            >
+            <p id="password-error" className="text-sm text-wrong">
               {errors.password}
             </p>
           )}
@@ -166,19 +163,16 @@ export default function Login({ actionData }: Route.ComponentProps) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60"
+          className="btn-primary mt-2"
         >
-          {isSubmitting ? "Logging in…" : "Log in"}
+          {isSubmitting ? t("login.submitting") : t("login.submit")}
         </button>
       </Form>
 
-      <p className="text-center text-sm text-slate-600 dark:text-slate-400">
-        No account yet?{" "}
-        <Link
-          to={registerHref}
-          className="font-medium text-blue-600 hover:underline dark:text-blue-400"
-        >
-          Register
+      <p className="text-center text-sm text-ink-muted">
+        {t("login.noAccount")}{" "}
+        <Link to={registerHref} className="link font-medium">
+          {t("login.register")}
         </Link>
       </p>
     </main>

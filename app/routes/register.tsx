@@ -11,21 +11,27 @@ import bcrypt from "bcryptjs";
 import { db } from "~/db.server";
 import { createUserSession, getUserId } from "~/session.server";
 import { safeRedirect } from "~/lib/redirect";
+import type { Translate } from "~/lib/i18n";
+import { getTranslator } from "~/lib/locale.server";
+import { useTranslate } from "~/lib/use-translate";
 import type { Route } from "./+types/register";
 
 export const meta: Route.MetaFunction = () => [
-  { title: "Register | Typing App" },
+  { title: "Register · Keystroke" },
 ];
 
-const registerSchema = z.object({
-  // Lowercased so one inbox can only have one account (Postgres compares exactly).
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .pipe(z.email("Enter a valid email address")),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
+// Built per request so the messages are in the user's language.
+function registerSchema(t: Translate) {
+  return z.object({
+    // Lowercased so one inbox can only have one account (Postgres compares exactly).
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .pipe(z.email(t("auth.err.email"))),
+    password: z.string().min(8, t("register.err.password")),
+  });
+}
 
 const BCRYPT_ROUNDS = 10;
 
@@ -40,8 +46,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const t = await getTranslator(request);
   const formData = await request.formData();
-  const result = registerSchema.safeParse(Object.fromEntries(formData));
+  const result = registerSchema(t).safeParse(Object.fromEntries(formData));
 
   if (!result.success) {
     const { fieldErrors } = z.flattenError(result.error);
@@ -62,10 +69,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (existingUser) {
     return data(
       {
-        errors: {
-          email: "This email is already registered",
-          password: undefined,
-        },
+        errors: { email: t("register.err.taken"), password: undefined },
       },
       { status: 400 },
     );
@@ -82,6 +86,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Register({ actionData }: Route.ComponentProps) {
+  const t = useTranslate();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const [searchParams] = useSearchParams();
@@ -91,23 +96,18 @@ export default function Register({ actionData }: Route.ComponentProps) {
   const errors = actionData?.errors;
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-16">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-5 py-16">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Create an account
+        <h1 className="font-display text-4xl tracking-tight">
+          {t("register.title")}
         </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Save your results and track your progress.
-        </p>
+        <p className="mt-1 text-sm text-ink-muted">{t("register.lead")}</p>
       </div>
 
-      <Form
-        method="post"
-        className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-      >
+      <Form method="post" className="card flex flex-col gap-4 p-6">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="email" className="text-sm font-medium">
-            Email
+            {t("auth.email")}
           </label>
           <input
             id="email"
@@ -115,15 +115,13 @@ export default function Register({ actionData }: Route.ComponentProps) {
             type="email"
             autoComplete="email"
             required
+            dir="ltr"
             aria-invalid={errors?.email ? true : undefined}
             aria-describedby={errors?.email ? "email-error" : undefined}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            className="field"
           />
           {errors?.email && (
-            <p
-              id="email-error"
-              className="text-sm text-red-600 dark:text-red-400"
-            >
+            <p id="email-error" className="text-sm text-wrong">
               {errors.email}
             </p>
           )}
@@ -131,7 +129,7 @@ export default function Register({ actionData }: Route.ComponentProps) {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="password" className="text-sm font-medium">
-            Password
+            {t("auth.password")}
           </label>
           <input
             id="password"
@@ -140,25 +138,20 @@ export default function Register({ actionData }: Route.ComponentProps) {
             autoComplete="new-password"
             required
             minLength={8}
+            dir="ltr"
             aria-invalid={errors?.password ? true : undefined}
             aria-describedby={
               errors?.password ? "password-error" : "password-hint"
             }
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            className="field"
           />
           {errors?.password ? (
-            <p
-              id="password-error"
-              className="text-sm text-red-600 dark:text-red-400"
-            >
+            <p id="password-error" className="text-sm text-wrong">
               {errors.password}
             </p>
           ) : (
-            <p
-              id="password-hint"
-              className="text-sm text-slate-500 dark:text-slate-400"
-            >
-              At least 8 characters.
+            <p id="password-hint" className="text-sm text-ink-faint">
+              {t("register.passwordHint")}
             </p>
           )}
         </div>
@@ -166,19 +159,16 @@ export default function Register({ actionData }: Route.ComponentProps) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white shadow-sm hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60"
+          className="btn-primary mt-2"
         >
-          {isSubmitting ? "Creating account…" : "Create account"}
+          {isSubmitting ? t("register.submitting") : t("register.submit")}
         </button>
       </Form>
 
-      <p className="text-center text-sm text-slate-600 dark:text-slate-400">
-        Already have an account?{" "}
-        <Link
-          to={loginHref}
-          className="font-medium text-blue-600 hover:underline dark:text-blue-400"
-        >
-          Log in
+      <p className="text-center text-sm text-ink-muted">
+        {t("register.hasAccount")}{" "}
+        <Link to={loginHref} className="link font-medium">
+          {t("register.login")}
         </Link>
       </p>
     </main>

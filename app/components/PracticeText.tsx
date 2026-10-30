@@ -1,3 +1,4 @@
+// Renders the practice passage one <span> per character, coloured by its status.
 import type { CharacterStatus } from "~/lib/typing";
 
 type PracticeTextProps = {
@@ -20,11 +21,12 @@ export function PracticeText({
           const isCurrentCharacter = index === cursorIndex;
           const isIncorrectSpace = character === " " && status === "incorrect";
 
+          const className = isCurrentCharacter
+            ? "mark mark-blink"
+            : `${getColorClass(status)} ${isIncorrectSpace ? "rounded-sm bg-wrong-soft" : ""}`;
+
           return (
-            <span
-              key={index}
-              className={`${getColorClass(status)} ${getHighlightClass(status, isIncorrectSpace, isCurrentCharacter)}`}
-            >
+            <span key={index} className={className}>
               {character}
             </span>
           );
@@ -36,32 +38,16 @@ export function PracticeText({
 
 function getColorClass(status: CharacterStatus): string {
   if (status === "incorrect") {
-    return "text-red-600 underline decoration-2 underline-offset-4 dark:text-red-400";
+    return "text-wrong underline decoration-2 underline-offset-4";
   }
 
-  if (status === "correct" || status === "corrected") {
-    return "text-slate-900 dark:text-slate-100";
-  }
-
-  return "text-slate-500 dark:text-slate-400";
-}
-
-function getHighlightClass(
-  status: CharacterStatus,
-  isIncorrectSpace: boolean,
-  isCurrentCharacter: boolean,
-): string {
   if (status === "corrected") {
-    return "rounded-sm bg-amber-100 dark:bg-amber-500/20";
+    return "text-fixed underline decoration-dotted underline-offset-4";
   }
 
-  if (isIncorrectSpace) {
-    return "rounded-sm bg-red-100 dark:bg-red-500/20";
+  if (status === "correct") {
+    return "text-ink";
   }
 
-  if (isCurrentCharacter) {
-    return "rounded-sm bg-blue-100 shadow-[inset_2px_0_0_var(--color-blue-600)] dark:bg-blue-500/20";
-  }
-
-  return "";
+  return "text-ink-faint";
 }
