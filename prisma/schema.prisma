@@ -35,6 +35,11 @@ model Text {
   language  String   @default("en")
   ownerId   Int?
   createdAt DateTime @default(now())
+  // Where the text came from. Wikipedia texts are hidden from the library
+  // (each one is a one-off fetched for a single practice).
+  source    TextSource @default(BUILTIN)
+  // Link back to the original article, for Wikipedia attribution.
+  sourceUrl String?
 
   owner   User?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   results Result[]
@@ -60,4 +65,10 @@ model Result {
 enum Role {
   USER
   ADMIN
+}
+
+enum TextSource {
+  BUILTIN
+  UPLOAD
+  WIKIPEDIA
 }
