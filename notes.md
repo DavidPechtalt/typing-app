@@ -1,5 +1,18 @@
 # Notes
 
+## 2026-11-02: The text library and uploads
+
+What I built:
+
+- `Text.source` (enum `TextSource`: BUILTIN, UPLOAD, WIKIPEDIA) and `Text.sourceUrl`. Migration `20261029103000_add_text_source`. Existing rows got BUILTIN by default, so one `updateMany` marked every text with an owner as UPLOAD. Three more built-in texts in the seed.
+- `/texts`: built-in texts for everyone, my uploads (with delete), and the Wikipedia buttons. The delete action uses `where: { id, ownerId: userId }`, so the ownership check is part of the query.
+- `/texts/new`: paste a text or choose a `.txt` file. `encType="multipart/form-data"` is required for the file to be sent; `request.formData()` parses it and `file.text()` reads it. Zod normalises whitespace with `.transform()` before `.pipe()` checks the length (20 to 3000 characters).
+
+Things I learned:
+
+- **Uploaded texts collapse whitespace** to single spaces, because the comparison is character by character and nobody can type a line break on purpose.
+- **Wikipedia texts are one-offs.** They have to be rows (a Result points at a Text), but they never appear in the library.
+
 ## 2026-10-30: Two languages and a new look
 
 What I built:
