@@ -5,6 +5,7 @@ export default [
   route("practice", "routes/practice.tsx"),
   route("texts", "routes/texts.tsx"),
   route("texts/new", "routes/texts.new.tsx"),
+  route("texts/wikipedia", "routes/texts.wikipedia.tsx"),
   route("register", "routes/register.tsx"),
   route("login", "routes/login.tsx"),
   route("logout", "routes/logout.tsx"),

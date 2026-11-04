@@ -1,5 +1,19 @@
 # Notes
 
+## 2026-11-04: Wikipedia
+
+What I built:
+
+- `/texts/wikipedia` (the external API). The form posts a language, the server calls `https://{lang}.wikipedia.org/api/rest_v1/page/random/summary`, cleans the `extract`, saves a Text with `source: WIKIPEDIA` and the article URL, and redirects to `/practice?text=<id>`.
+- Pure helpers in `app/lib/wikipedia.ts` (tested): `cleanExtract` turns curly quotes and dashes into keyboard characters and drops citation marks; `trimToSentence` cuts long summaries at a sentence end; `summaryToPracticeText` rejects disambiguation pages and summaries that are too short.
+- The HTTP call lives in `wikipedia.server.ts`: a User-Agent (Wikipedia asks for one), a 6 s timeout with `AbortSignal.timeout`, and up to four draws when an article is unsuitable.
+
+Things I learned:
+
+- **The random endpoint answers with a 303 redirect** to the chosen article; `fetch` follows it by default.
+- **A loader that redirects hides action errors.** My first version redirected GET to `/texts`. After a failed action React Router re-runs the loader, so the error page never showed. The route renders a small page instead.
+- **Prettier unescapes `\u` escapes** in regexes, which then trips ESLint's `no-irregular-whitespace` for U+00A0. Building the RegExp from a string keeps the escape visible.
+
 ## 2026-11-02: The text library and uploads
 
 What I built:
