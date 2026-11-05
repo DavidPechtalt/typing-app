@@ -1,5 +1,19 @@
 # Notes
 
+## 2026-11-05: Choosing a text on the practice page
+
+What I built:
+
+- `/practice?text=<id>` loads one text by id. Without an id the loader picks a random built-in text and _redirects_ to the URL with its id.
+- "Next text" loads a different random built-in text (`?next=<id>` excludes the current one); for a Wikipedia text it fetches a new article instead. "Library" goes to `/texts`.
+- Hebrew texts get `dir="rtl"` on the typing area, whatever language the interface is in, and the highlight sits on the right side of the next character.
+- The results screen shows the WPM as the heading, four tiles below, and the three buttons.
+
+Things I learned:
+
+- **Loaders re-run after an action.** Saving a result makes the practice loader run again. With the random pick inside the loader the finished text was swapped for another one under the results. The redirect to a URL that contains the id fixed it.
+- **`meta` receives `loaderData`, not `data`,** in React Router 8's typed `Route.MetaFunction`.
+
 ## 2026-11-04: Wikipedia
 
 What I built:
