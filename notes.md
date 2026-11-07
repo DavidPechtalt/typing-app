@@ -1,5 +1,18 @@
 # Notes
 
+## 2026-11-07: Chart components and the history page
+
+What I built:
+
+- Four small SVG chart components in `app/components/charts/`: `ColumnChart`, `LineChart`, `BarList`, `SegmentedBar`. No chart library: a `viewBox` that scales to its container, hairline gridlines, a hover tooltip and a "show as table" view under every chart. `scale.ts` has `niceTicks`, which rounds the y-axis to 0 / 5 / 10 instead of 0 / 3.7 / 7.4.
+- `/history`: personal bests (best WPM, average WPM, average accuracy, time typing), a line chart of the last 30 practices, and the full table with an "Again" link that opens the same text.
+- The series colours were checked for colour-blind separation on both the light and the dark background.
+
+Things I learned:
+
+- **A chart always reads left to right**, so the SVG sits in a `dir="ltr"` wrapper even on the Hebrew pages.
+- **`null` leaves a gap.** A day with no practices has no average; the line chart lifts the pen instead of drawing a misleading zero.
+
 ## 2026-11-05: Choosing a text on the practice page
 
 What I built:
