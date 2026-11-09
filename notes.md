@@ -1,5 +1,17 @@
 # Notes
 
+## 2026-11-09: Admin statistics and the full text of every text
+
+What I built:
+
+- `/admin/stats`: six charts. All the aggregation happens in the loader with the pure helpers in `app/lib/stats.ts` (`countPerDay`, `averagePerDay`, `histogram`, `countBy`), so the browser receives small arrays, not every row. Labels for sources and languages travel as translation keys and are translated in the component.
+- `/admin/texts` now shows each text as a card with a `<details>` that reveals the whole content. No JavaScript needed and it works with the keyboard.
+
+Things I learned:
+
+- **Two texts can share a title.** The "most practised texts" list used the title as the React key and two uploads were both called "Market at dawn". React warned about duplicate keys in the console. Lists are keyed by id now.
+- **Too many x labels pile up.** The speed histogram can have dozens of buckets; `labelEvery` keeps it to about twelve labels.
+
 ## 2026-11-07: Chart components and the history page
 
 What I built:
