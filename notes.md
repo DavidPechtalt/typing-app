@@ -1,5 +1,10 @@
 # Notes
 
+## 2026-11-10: README and a last check
+
+- Rewrote the README: every feature, the two languages, the data model, how admins are made.
+- Went through every page once more in both languages and in dark mode. Checked that every clickable thing shows a pointer (Tailwind's reset gives buttons `cursor: default`, so there is one rule in `app.css` for buttons, summaries, selects and file inputs).
+
 ## 2026-11-09: Admin statistics and the full text of every text
 
 What I built:
